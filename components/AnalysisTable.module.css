@@ -1,0 +1,233 @@
+.container {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.exportButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.exportButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.downloadIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.8);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+  white-space: nowrap;
+}
+
+.tr {
+  transition: background-color 0.15s ease;
+}
+
+.tr:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.td {
+  padding: 0.75rem 1rem;
+  color: #e2e8f0;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+  vertical-align: top;
+}
+
+.sortButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0;
+}
+
+.sortButton:hover {
+  color: #e2e8f0;
+}
+
+.sortIcon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.5;
+}
+
+.titleCell {
+  max-width: 300px;
+}
+
+.titleLink {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: #818cf8;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.titleLink:hover {
+  color: #a5b4fc;
+}
+
+.externalIcon {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.threatActorTag {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.actorNameTag {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c4b5fd;
+}
+
+.attackVectorTag {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+}
+
+.notesCell {
+  max-width: 300px;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.emptyState {
+  padding: 3rem;
+  text-align: center;
+  color: #64748b;
+}
+
+/* Star / UK Finance Relevance styles */
+.starBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  border-radius: 6px;
+  color: #fcd34d;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.starBadgeIcon {
+  width: 14px;
+  height: 14px;
+  fill: #fcd34d;
+}
+
+.starHeaderIcon {
+  width: 14px;
+  height: 14px;
+  color: #fcd34d;
+}
+
+.starCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.starIcon {
+  width: 18px;
+  height: 18px;
+  color: #fcd34d;
+  fill: #fcd34d;
+}
+
+.starredRow {
+  background: rgba(250, 204, 21, 0.08) !important;
+}
+
+.starredRow:hover {
+  background: rgba(250, 204, 21, 0.15) !important;
+}
+
+.relevanceCell {
+  max-width: 200px;
+  font-size: 0.75rem;
+  color: #fcd34d;
+  line-height: 1.4;
+}
+
+.mutedText {
+  color: #475569;
+}

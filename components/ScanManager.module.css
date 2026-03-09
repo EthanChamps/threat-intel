@@ -1,0 +1,340 @@
+.container {
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.toggleButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.toggleButton:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.icon {
+    width: 16px;
+    height: 16px;
+    color: var(--primary-light);
+}
+
+.title {
+    font-weight: 500;
+    color: #e2e8f0;
+}
+
+.badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.countBadge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+}
+
+.sizeBadge {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+}
+
+.tinyIcon {
+    width: 10px;
+    height: 10px;
+}
+
+.chevron {
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+}
+
+.content {
+    padding: 0 1.25rem 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+}
+
+.newScanButton {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 6px;
+    color: #34d399;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.newScanButton:hover {
+    background: rgba(16, 185, 129, 0.25);
+}
+
+.deleteAllButton {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 6px;
+    color: #f87171;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.deleteAllButton:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.smallIcon {
+    width: 12px;
+    height: 12px;
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #64748b;
+    text-align: center;
+}
+
+.emptyIcon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 0.75rem;
+    opacity: 0.5;
+}
+
+.emptyState p {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+.emptyState span {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.scanList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.scanItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 8px;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    transition: all 0.15s ease;
+}
+
+.scanItem:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.scanItem.active {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.scanInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.scanName {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #e2e8f0;
+}
+
+.scanMeta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.6875rem;
+    color: #64748b;
+}
+
+.scanMeta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.metaIcon {
+    width: 10px;
+    height: 10px;
+}
+
+.scanActions {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+}
+
+.loadButton {
+    padding: 0.375rem 0.625rem;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 6px;
+    color: #a5b4fc;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.loadButton:hover {
+    background: rgba(99, 102, 241, 0.25);
+    border-color: var(--primary);
+}
+
+.currentBadge {
+    padding: 0.25rem 0.5rem;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 6px;
+    color: #34d399;
+    font-size: 0.6875rem;
+    font-weight: 500;
+}
+
+.iconButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: rgba(100, 116, 139, 0.1);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    border-radius: 4px;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.iconButton:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+}
+
+.deleteButton:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.deleteButton.confirming {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #ef4444;
+    animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    from {
+        opacity: 0.7;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.editRow {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.editInput {
+    flex: 1;
+    padding: 0.375rem 0.5rem;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    border-radius: 4px;
+    color: #e2e8f0;
+    font-size: 0.8125rem;
+    outline: none;
+}
+
+.editInput:focus {
+    border-color: var(--primary);
+}
+
+.editAction {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 4px;
+    color: #a5b4fc;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.editAction:hover {
+    background: rgba(99, 102, 241, 0.25);
+}
+
+.helpText {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.5;
+}

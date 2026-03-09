@@ -1,0 +1,172 @@
+.container {
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.toggleButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.toggleButton:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.rssIcon {
+    width: 16px;
+    height: 16px;
+    color: var(--primary-light);
+}
+
+.chevron {
+    margin-left: auto;
+    font-size: 0.75rem;
+}
+
+.content {
+    padding: 0 1.25rem 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.feedList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.feedItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 8px;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.feedLink {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #818cf8;
+    text-decoration: none;
+    font-size: 0.8125rem;
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.feedLink:hover {
+    color: #a5b4fc;
+}
+
+.externalIcon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.removeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem;
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+.removeButton:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.trashIcon {
+    width: 14px;
+    height: 14px;
+}
+
+.addForm {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.input {
+    flex: 1;
+    padding: 0.625rem 0.875rem;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 0.875rem;
+    font-family: monospace;
+}
+
+.input::placeholder {
+    color: #475569;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.625rem 1rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.addButton:hover {
+    background: var(--primary-light);
+}
+
+.plusIcon {
+    width: 16px;
+    height: 16px;
+}
+
+.hint {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.hint code {
+    padding: 0.125rem 0.375rem;
+    background: rgba(99, 102, 241, 0.15);
+    border-radius: 4px;
+    font-family: monospace;
+    color: #a5b4fc;
+}

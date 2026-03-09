@@ -1,0 +1,398 @@
+.container {
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.toggleButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.toggleButton:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.icon {
+    width: 16px;
+    height: 16px;
+    color: var(--primary-light);
+}
+
+.badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.rssBadge,
+.scrapeBadge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.rssBadge {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.scrapeBadge {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+.chevron {
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+}
+
+.content {
+    padding: 0 1.25rem 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.75rem 0;
+}
+
+.resetButton {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 6px;
+    color: #a5b4fc;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.resetButton:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.smallIcon {
+    width: 12px;
+    height: 12px;
+}
+
+.sourceList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sourceItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 8px;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    transition: all 0.15s ease;
+}
+
+.sourceItem.disabled {
+    opacity: 0.5;
+}
+
+.toggleSourceButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.enabled .toggleSourceButton {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.disabled .toggleSourceButton {
+    background: rgba(100, 116, 139, 0.2);
+}
+
+.checkIcon {
+    width: 14px;
+    height: 14px;
+    color: #34d399;
+}
+
+.xIcon {
+    width: 14px;
+    height: 14px;
+    color: #64748b;
+}
+
+.sourceInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.sourceName {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #e2e8f0;
+}
+
+.sourceTypeRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sourceType {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.switchModeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 4px;
+    color: #818cf8;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.switchModeButton:hover {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: var(--primary);
+    color: #a5b4fc;
+}
+
+.rssType {
+    color: #34d399;
+}
+
+.scrapeType {
+    color: #fbbf24;
+}
+
+.tinyIcon {
+    width: 10px;
+    height: 10px;
+}
+
+.sourceUrl {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-decoration: none;
+    font-family: monospace;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sourceUrl:hover {
+    color: #818cf8;
+}
+
+.hint {
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.hint strong {
+    color: #94a3b8;
+}
+
+/* Test buttons and stats */
+.articlesBadge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+}
+
+.testAllButton {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 6px;
+    color: #34d399;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.testAllButton:hover {
+    background: rgba(16, 185, 129, 0.25);
+}
+
+.statsSection {
+    min-width: 80px;
+    text-align: right;
+}
+
+.articleCount {
+    font-size: 0.6875rem;
+    color: #34d399;
+    font-weight: 500;
+}
+
+.loadingStats {
+    display: inline-flex;
+    align-items: center;
+}
+
+.errorStats {
+    font-size: 0.6875rem;
+    color: #ef4444;
+    cursor: help;
+}
+
+.testButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 6px;
+    color: #818cf8;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.testButton:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 0.25);
+    border-color: var(--primary);
+}
+
+.testButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.playIcon {
+    width: 12px;
+    height: 12px;
+}
+
+.spinnerSmall {
+    width: 12px;
+    height: 12px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.inlineIcon {
+    width: 12px;
+    height: 12px;
+    vertical-align: middle;
+    display: inline;
+}
+
+.selectionButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.selectionButton:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.checkSquareIcon {
+    width: 16px;
+    height: 16px;
+    color: #818cf8;
+}
+
+.squareIcon {
+    width: 16px;
+    height: 16px;
+    color: #64748b;
+}
+
+.sourceItem.selected {
+    border-color: rgba(99, 102, 241, 0.5);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.selectAllButton {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 6px;
+    color: #a5b4fc;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.selectAllButton:hover {
+    background: rgba(99, 102, 241, 0.25);
+}

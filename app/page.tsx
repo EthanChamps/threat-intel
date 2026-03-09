@@ -1,65 +1,382 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Shield, Loader2, AlertTriangle, Zap, StopCircle } from 'lucide-react';
+import { AnalysisTable } from '@/components/AnalysisTable';
+import { SourceManager } from '@/components/SourceManager';
+import { ScanManager } from '@/components/ScanManager';
+import { DateRangeFilter, getDefaultDateRange, type DateRange } from '@/components/DateRangeFilter';
+import { StatusLog, type LogEntry } from '@/components/StatusLog';
+import type { ThreatSource } from '@/lib/sources';
+import type { ThreatAnalysis } from '@/lib/extractor';
+import { 
+    StoredScan, 
+    createScan, 
+    saveScan, 
+    getCurrentScanId, 
+    setCurrentScanId, 
+    clearCurrentScanId,
+    getMostRecentScan 
+} from '@/lib/scans';
+import styles from './page.module.css';
+
+interface Stats {
+  total: number;
+  analyzed: number;
+  sourceStats?: Record<string, number>;
+}
 
 export default function Home() {
+  const [analyses, setAnalyses] = useState<ThreatAnalysis[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange());
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [articleLimit, setArticleLimit] = useState(25);
+  const [selectedSources, setSelectedSources] = useState<ThreatSource[]>([]);
+  const [currentScanId, setCurrentScanIdState] = useState<string | null>(null);
+  const currentScanRef = useRef<StoredScan | null>(null);
+
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const storedScanId = getCurrentScanId();
+    if (storedScanId) {
+      setCurrentScanIdState(storedScanId);
+    }
+    
+    const mostRecent = getMostRecentScan();
+    if (mostRecent && mostRecent.analyses.length > 0) {
+      setAnalyses(mostRecent.analyses);
+      if (mostRecent.stats) {
+        setStats({
+          total: mostRecent.stats.totalArticles,
+          analyzed: mostRecent.stats.analyzedArticles,
+          sourceStats: mostRecent.stats.sourceStats,
+        });
+      }
+      setLogs(mostRecent.logs);
+      setCurrentScanIdState(mostRecent.id);
+      setCurrentScanId(mostRecent.id);
+      currentScanRef.current = mostRecent;
+    }
+  }, []);
+
+  const addLog = useCallback((message: string, type: LogEntry['type'] = 'info', phase?: string) => {
+    const entry: LogEntry = {
+      id: `${Date.now()}-${Math.random()}`,
+      timestamp: new Date(),
+      message,
+      type,
+      phase,
+    };
+    setLogs(prev => [...prev, entry]);
+  }, []);
+
+  const stopAnalysis = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      addLog('Analysis stopped by user', 'error');
+      setLoading(false);
+    }
+  }, [addLog]);
+
+  const handleLoadScan = useCallback((scan: StoredScan) => {
+    setAnalyses(scan.analyses);
+    if (scan.stats) {
+      setStats({
+        total: scan.stats.totalArticles,
+        analyzed: scan.stats.analyzedArticles,
+        sourceStats: scan.stats.sourceStats,
+      });
+    } else {
+      setStats(null);
+    }
+    setLogs(scan.logs);
+    setCurrentScanIdState(scan.id);
+    setCurrentScanId(scan.id);
+    currentScanRef.current = scan;
+    setError(null);
+  }, []);
+
+  const handleNewScan = useCallback(() => {
+    setAnalyses([]);
+    setStats(null);
+    setLogs([]);
+    setError(null);
+    setCurrentScanIdState(null);
+    clearCurrentScanId();
+    currentScanRef.current = null;
+  }, []);
+
+  const handleScanDeleted = useCallback(() => {
+    const deleted = currentScanRef.current;
+    if (deleted && deleted.id === currentScanId) {
+      handleNewScan();
+    }
+  }, [currentScanId, handleNewScan]);
+
+  const runAnalysis = async () => {
+    setLoading(true);
+    setError(null);
+    setLogs([]);
+    setAnalyses([]);
+    setStats(null);
+
+    abortControllerRef.current = new AbortController();
+
+    const newScan = createScan(
+      { startDate: dateRange.startDate, endDate: dateRange.endDate },
+      selectedSources.map(s => s.name)
+    );
+    currentScanRef.current = newScan;
+    setCurrentScanIdState(newScan.id);
+    setCurrentScanId(newScan.id);
+
+    try {
+      if (selectedSources.length === 0) {
+        setError('No sources selected for analysis');
+        addLog('No sources selected', 'error');
+        setLoading(false);
+        return;
+      }
+      addLog(`Starting analysis with ${selectedSources.length} selected sources`, 'info', 'init');
+
+      const response = await fetch('/api/analyze-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          limit: articleLimit,
+          sources: selectedSources,
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
+        }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse SSE events from buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        let currentEvent = '';
+        let currentData = '';
+
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7);
+          } else if (line.startsWith('data: ')) {
+            currentData = line.slice(6);
+
+            if (currentEvent && currentData) {
+              try {
+                const data = JSON.parse(currentData);
+                handleEvent(currentEvent, data);
+              } catch {
+                // Ignore parse errors
+              }
+              currentEvent = '';
+              currentData = '';
+            }
+          }
+        }
+      }
+
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // User cancelled - already handled
+      } else {
+        const message = err instanceof Error ? err.message : 'An error occurred';
+        setError(message);
+        addLog(message, 'error');
+      }
+    } finally {
+      setLoading(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleEvent = (event: string, data: Record<string, unknown>) => {
+    switch (event) {
+      case 'status':
+        addLog(data.message as string, 'info', data.phase as string);
+        break;
+
+      case 'progress':
+        addLog(data.message as string, 'progress', data.phase as string);
+        // Add partial results as they come in
+        if (data.results && Array.isArray(data.results)) {
+          setAnalyses(prev => [...prev, ...(data.results as ThreatAnalysis[])]);
+        }
+        break;
+
+      case 'error':
+        addLog(data.message as string, 'error', data.phase as string);
+        if (data.fatal) {
+          setError(data.message as string);
+        }
+        break;
+
+      case 'complete':
+        if (data.success) {
+          addLog(`Analysis complete: ${data.analyzedArticles} articles analyzed`, 'success');
+          const finalAnalyses = data.data as ThreatAnalysis[];
+          const finalStats = {
+            total: data.totalArticles as number,
+            analyzed: data.analyzedArticles as number,
+            sourceStats: data.sourceStats as Record<string, number>,
+          };
+          setAnalyses(finalAnalyses);
+          setStats(finalStats);
+          
+          if (currentScanRef.current) {
+            currentScanRef.current.analyses = finalAnalyses;
+            currentScanRef.current.stats = {
+              totalArticles: finalStats.total,
+              analyzedArticles: finalStats.analyzed,
+              sourceStats: finalStats.sourceStats,
+            };
+            currentScanRef.current.logs = logs;
+            saveScan(currentScanRef.current);
+          }
+        }
+        break;
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <div className={styles.logo}>
+          <Shield className={styles.logoIcon} />
+          <h1 className={styles.title}>Threat Intel Analyst</h1>
+        </div>
+        <p className={styles.subtitle}>
+          AI-powered cyber threat intelligence extraction (STIX 2.1)
+        </p>
+      </header>
+
+      <main className={styles.main}>
+        <section className={styles.controlPanel}>
+          <div className={styles.panelContent}>
+            <div className={styles.panelInfo}>
+              <h2 className={styles.panelTitle}>Threat Analysis</h2>
+              <p className={styles.panelDescription}>
+                Aggregate and analyze articles from multiple threat intel sources.
+                Results use STIX 2.1 vocabulary for sectors and threat actor types.
+              </p>
+            </div>
+
+            {loading ? (
+              <button onClick={stopAnalysis} className={styles.stopButton}>
+                <StopCircle className={styles.buttonIcon} />
+                Stop Analysis
+              </button>
+            ) : (
+              <button onClick={runAnalysis} className={styles.analyzeButton}>
+                <Zap className={styles.buttonIcon} />
+                Run Analysis
+              </button>
+            )}
+          </div>
+
+          {stats && (
+            <div className={styles.statsBar}>
+              <span className={styles.stat}>
+                <strong>{stats.total}</strong> articles fetched
+              </span>
+              <span className={styles.statDivider}>•</span>
+              <span className={styles.stat}>
+                <strong>{stats.analyzed}</strong> successfully analyzed
+              </span>
+              {stats.sourceStats && Object.keys(stats.sourceStats).length > 0 && (
+                <>
+                  <span className={styles.statDivider}>•</span>
+                  <span className={styles.stat}>
+                    from <strong>{Object.keys(stats.sourceStats).length}</strong> sources
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+        </section>
+
+        <StatusLog logs={logs} isRunning={loading} onStop={stopAnalysis} />
+
+        <ScanManager 
+          currentScanId={currentScanId}
+          onLoadScan={handleLoadScan}
+          onNewScan={handleNewScan}
+          onScanDeleted={handleScanDeleted}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <SourceManager dateRange={dateRange} onSelectedSourcesChange={setSelectedSources} />
+
+        <DateRangeFilter onChange={setDateRange} />
+
+        <section className={styles.limitSection}>
+          <label className={styles.limitLabel}>
+            <span>Article Limit</span>
+            <div className={styles.limitControls}>
+              {[25, 50, 100, 200].map((preset) => (
+                <button
+                  key={preset}
+                  onClick={() => setArticleLimit(preset)}
+                  className={`${styles.limitPreset} ${articleLimit === preset ? styles.limitPresetActive : ''}`}
+                  disabled={loading}
+                >
+                  {preset}
+                </button>
+              ))}
+              <input
+                type="number"
+                min="1"
+                max="500"
+                value={articleLimit}
+                onChange={(e) => setArticleLimit(Math.max(1, Math.min(500, parseInt(e.target.value) || 25)))}
+                className={styles.limitInput}
+                disabled={loading}
+              />
+            </div>
+          </label>
+        </section>
+
+        {error && (
+          <div className={styles.errorBanner}>
+            <AlertTriangle className={styles.errorIcon} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <section className={styles.resultsSection}>
+          <AnalysisTable data={analyses} />
+        </section>
       </main>
+
+      <footer className={styles.footer}>
+        <p>
+          Powered by <strong>Vercel AI SDK</strong> + <strong>Google Gemini</strong>
+        </p>
+      </footer>
     </div>
   );
 }
