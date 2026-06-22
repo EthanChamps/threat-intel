@@ -77,10 +77,6 @@ Because state is client-side, the API routes are stateless: the frontend passes 
 Enforced via `as const` arrays in `lib/extractor.ts` and mirrored in the system prompt — change both together:
 - `STIX_INDUSTRY_SECTORS` (target sector), `STIX_THREAT_ACTOR_TYPES` (actor classification), `STIX_ATTACK_PATTERNS` (attack technique).
 
-### Legacy / dead code to be aware of
-
-`lib/rss.ts` is an earlier RSS-only fetcher with its own hardcoded `DEFAULT_FEED_URLS` and a separate `FeedItem` type. The live pipeline uses `lib/fetcher.ts` instead — prefer `fetcher.ts` and don't confuse the two `FeedItem` definitions.
-
 ## Path Aliases
 
 `@/*` maps to the project root (configured in `tsconfig.json`).
