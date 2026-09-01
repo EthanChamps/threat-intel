@@ -48,3 +48,7 @@ A Next.js application that aggregates, scrapes, and analyzes threat intelligence
 - **Automated Scraping**: Fetches and parses article content automatically.
 - **AI Analysis**: Extracts key indicators of compromise (IoCs) and threat data using Google Gemini.
 - **Dashboard**: View organized, deduplicated threat intelligence in a real-time table layout.
+
+## Article Corpus
+
+Manual analysis stores discovered article metadata, scraped content, source relationships, and prompt-versioned AI results in `data/threat-intel.sqlite`. The directory is created automatically on the first run and is ignored by Git. Re-running a date range reuses stored articles and analyses, scraping and analyzing only missing work. Back up the SQLite file (including its `-wal` and `-shm` files while the app is running, or after stopping the app) if the corpus must be preserved.

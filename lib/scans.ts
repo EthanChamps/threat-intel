@@ -8,6 +8,10 @@ export interface ScanStats {
     uniqueArticles?: number;
     duplicatesRemoved?: number;
     sourceStats?: Record<string, number>;
+    newArticles?: number;
+    reusedArticles?: number;
+    scrapeFailed?: number;
+    analysisFailed?: number;
 }
 
 export interface StoredScan {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Shield, Loader2, AlertTriangle, Zap, StopCircle } from 'lucide-react';
+import { Shield, AlertTriangle, Zap, StopCircle } from 'lucide-react';
 import { AnalysisTable } from '@/components/AnalysisTable';
 import { SourceManager } from '@/components/SourceManager';
 import { ScanManager } from '@/components/ScanManager';
@@ -24,6 +24,10 @@ interface Stats {
   total: number;
   analyzed: number;
   sourceStats?: Record<string, number>;
+  newArticles?: number;
+  reusedArticles?: number;
+  scrapeFailed?: number;
+  analysisFailed?: number;
 }
 
 export default function Home() {
@@ -33,7 +37,6 @@ export default function Home() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange());
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [articleLimit, setArticleLimit] = useState(25);
   const [selectedSources, setSelectedSources] = useState<ThreatSource[]>([]);
   const [currentScanId, setCurrentScanIdState] = useState<string | null>(null);
   const currentScanRef = useRef<StoredScan | null>(null);
@@ -54,6 +57,10 @@ export default function Home() {
           total: mostRecent.stats.totalArticles,
           analyzed: mostRecent.stats.analyzedArticles,
           sourceStats: mostRecent.stats.sourceStats,
+          newArticles: mostRecent.stats.newArticles,
+          reusedArticles: mostRecent.stats.reusedArticles,
+          scrapeFailed: mostRecent.stats.scrapeFailed,
+          analysisFailed: mostRecent.stats.analysisFailed,
         });
       }
       setLogs(mostRecent.logs);
@@ -87,8 +94,12 @@ export default function Home() {
     if (scan.stats) {
       setStats({
         total: scan.stats.totalArticles,
-        analyzed: scan.stats.analyzedArticles,
-        sourceStats: scan.stats.sourceStats,
+          analyzed: scan.stats.analyzedArticles,
+          sourceStats: scan.stats.sourceStats,
+          newArticles: scan.stats.newArticles,
+          reusedArticles: scan.stats.reusedArticles,
+          scrapeFailed: scan.stats.scrapeFailed,
+          analysisFailed: scan.stats.analysisFailed,
       });
     } else {
       setStats(null);
@@ -147,7 +158,6 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          limit: articleLimit,
           sources: selectedSources,
           startDate: dateRange.startDate,
           endDate: dateRange.endDate,
@@ -244,6 +254,10 @@ export default function Home() {
             total: data.totalArticles as number,
             analyzed: data.analyzedArticles as number,
             sourceStats: data.sourceStats as Record<string, number>,
+            newArticles: data.newArticles as number,
+            reusedArticles: data.reusedArticles as number,
+            scrapeFailed: data.scrapeFailed as number,
+            analysisFailed: data.analysisFailed as number,
           };
           setAnalyses(finalAnalyses);
           setStats(finalStats);
@@ -254,6 +268,10 @@ export default function Home() {
               totalArticles: finalStats.total,
               analyzedArticles: finalStats.analyzed,
               sourceStats: finalStats.sourceStats,
+              newArticles: finalStats.newArticles,
+              reusedArticles: finalStats.reusedArticles,
+              scrapeFailed: finalStats.scrapeFailed,
+              analysisFailed: finalStats.analysisFailed,
             };
             currentScanRef.current.logs = logs;
             saveScan(currentScanRef.current);
@@ -316,6 +334,14 @@ export default function Home() {
                   </span>
                 </>
               )}
+              {stats.newArticles !== undefined && (
+                <>
+                  <span className={styles.statDivider}>â€¢</span>
+                  <span className={styles.stat}><strong>{stats.newArticles}</strong> newly scraped</span>
+                  <span className={styles.statDivider}>â€¢</span>
+                  <span className={styles.stat}><strong>{stats.reusedArticles || 0}</strong> reused</span>
+                </>
+              )}
             </div>
           )}
         </section>
@@ -334,30 +360,10 @@ export default function Home() {
         <DateRangeFilter onChange={setDateRange} />
 
         <section className={styles.limitSection}>
-          <label className={styles.limitLabel}>
-            <span>Article Limit</span>
-            <div className={styles.limitControls}>
-              {[25, 50, 100, 200].map((preset) => (
-                <button
-                  key={preset}
-                  onClick={() => setArticleLimit(preset)}
-                  className={`${styles.limitPreset} ${articleLimit === preset ? styles.limitPresetActive : ''}`}
-                  disabled={loading}
-                >
-                  {preset}
-                </button>
-              ))}
-              <input
-                type="number"
-                min="1"
-                max="500"
-                value={articleLimit}
-                onChange={(e) => setArticleLimit(Math.max(1, Math.min(500, parseInt(e.target.value) || 25)))}
-                className={styles.limitInput}
-                disabled={loading}
-              />
-            </div>
-          </label>
+          <div className={styles.limitLabel}>
+            <span>Collection scope</span>
+            <span>All articles in the selected date range are collected and reused from SQLite on later runs.</span>
+          </div>
         </section>
 
         {error && (
