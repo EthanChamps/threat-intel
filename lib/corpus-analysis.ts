@@ -91,7 +91,7 @@ export async function runCorpusAnalysis(
             phase: 'fetch', articlesFound: stats.discovered,
         });
 
-        const storedArticles = getArticlesForRange(range.start, range.end, discoveredAt);
+        const storedArticles = getArticlesForRange(range.start, range.end, discoveredAt, sourceNames);
         const needsScraping = storedArticles.filter(article => article.content.length < 100);
         if (needsScraping.length > 0) {
             emit('status', { message: `Scraping ${needsScraping.length} new or incomplete articles...`, phase: 'scrape' });
@@ -109,7 +109,7 @@ export async function runCorpusAnalysis(
             }
         }
 
-        const currentArticles = getArticlesForRange(range.start, range.end, discoveredAt).filter(article => article.content.length > 100);
+        const currentArticles = getArticlesForRange(range.start, range.end, discoveredAt, sourceNames).filter(article => article.content.length > 100);
         stats.eligible = currentArticles.length;
         emit('status', { message: `${stats.eligible} articles have usable content`, phase: 'scrape', scraped: stats.scraped, scrapeFailed: stats.scrapeFailed });
         if (currentArticles.length === 0) {

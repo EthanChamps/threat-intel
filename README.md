@@ -4,7 +4,7 @@ A Next.js application that aggregates, scrapes, and analyzes threat intelligence
 
 ## Prerequisites
 
-- Node.js (v18+ recommended)
+- Node.js (v22+ required)
 - A [Google Gemini API Key](https://aistudio.google.com/apikey) (Free tier available)
 
 ## Setup & Installation

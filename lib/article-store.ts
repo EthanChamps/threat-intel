@@ -181,13 +181,26 @@ function mapArticle(row: Record<string, unknown>): StoredArticle {
     };
 }
 
-export function getArticlesForRange(startDate: string, endDate: string, discoveredAfter: string): StoredArticle[] {
+export function getArticlesForRange(startDate: string, endDate: string, discoveredAfter: string, sourceNames?: string[]): StoredArticle[] {
+    const sourceFilter = sourceNames && sourceNames.length > 0
+        ? `AND EXISTS (
+                SELECT 1 FROM article_sources selected_source
+                WHERE selected_source.article_id = articles.id
+                  AND selected_source.source_name IN (${sourceNames.map(() => '?').join(', ')})
+            )`
+        : '';
     const rows = getDatabase().prepare(`
         SELECT * FROM articles
-        WHERE (pub_date >= ? AND pub_date <= ?)
-           OR (pub_date IS NULL AND discovered_at >= ?)
+        WHERE ((pub_date >= ? AND pub_date <= ?)
+           OR (pub_date IS NULL AND discovered_at >= ?))
+        ${sourceFilter}
         ORDER BY COALESCE(pub_date, discovered_at) DESC
-    `).all(`${startDate}T00:00:00.000Z`, `${endDate}T23:59:59.999Z`, discoveredAfter) as Record<string, unknown>[];
+    `).all(
+        `${startDate}T00:00:00.000Z`,
+        `${endDate}T23:59:59.999Z`,
+        discoveredAfter,
+        ...(sourceNames || []),
+    ) as Record<string, unknown>[];
     return rows.map(mapArticle);
 }
 
