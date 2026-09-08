@@ -1,6 +1,6 @@
 .container {
-    background: rgba(30, 41, 59, 0.5);
-    border-radius: 12px;
+    background: rgba(28, 32, 33, 0.5);
+    border-radius: 6px;
     border: 1px solid var(--border);
     margin-bottom: 1.5rem;
     overflow: hidden;
@@ -14,7 +14,7 @@
     padding: 1rem 1.25rem;
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--muted);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -22,7 +22,7 @@
 }
 
 .toggleButton:hover {
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(110, 150, 137, 0.1);
 }
 
 .icon {
@@ -76,17 +76,17 @@
     align-items: center;
     gap: 0.375rem;
     padding: 0.375rem 0.75rem;
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    background: rgba(110, 150, 137, 0.1);
+    border: 1px solid rgba(110, 150, 137, 0.3);
     border-radius: 6px;
-    color: #a5b4fc;
+    color: var(--primary-light);
     font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .resetButton:hover {
-    background: rgba(99, 102, 241, 0.2);
+    background: rgba(110, 150, 137, 0.2);
 }
 
 .smallIcon {
@@ -105,9 +105,9 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.625rem 0.75rem;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(20, 23, 24, 0.6);
     border-radius: 8px;
-    border: 1px solid rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(110, 150, 137, 0.15);
     transition: all 0.15s ease;
 }
 
@@ -144,7 +144,7 @@
 .xIcon {
     width: 14px;
     height: 14px;
-    color: #64748b;
+    color: var(--muted);
 }
 
 .sourceInfo {
@@ -158,7 +158,7 @@
 .sourceName {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: #e2e8f0;
+    color: var(--foreground);
 }
 
 .sourceTypeRow {
@@ -182,18 +182,18 @@
     width: 18px;
     height: 18px;
     padding: 0;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    background: rgba(110, 150, 137, 0.15);
+    border: 1px solid rgba(110, 150, 137, 0.3);
     border-radius: 4px;
-    color: #818cf8;
+    color: var(--primary-light);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .switchModeButton:hover {
-    background: rgba(99, 102, 241, 0.3);
+    background: rgba(110, 150, 137, 0.3);
     border-color: var(--primary);
-    color: #a5b4fc;
+    color: var(--primary-light);
 }
 
 .rssType {
@@ -211,7 +211,7 @@
 
 .sourceUrl {
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--muted);
     text-decoration: none;
     font-family: monospace;
     max-width: 200px;
@@ -221,18 +221,18 @@
 }
 
 .sourceUrl:hover {
-    color: #818cf8;
+    color: var(--primary-light);
 }
 
 .hint {
     margin-top: 1rem;
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--muted);
     line-height: 1.5;
 }
 
 .hint strong {
-    color: #94a3b8;
+    color: var(--muted);
 }
 
 /* Test buttons and stats */
@@ -241,8 +241,8 @@
     border-radius: 4px;
     font-size: 0.6875rem;
     font-weight: 600;
-    background: rgba(99, 102, 241, 0.2);
-    color: #a5b4fc;
+    background: rgba(110, 150, 137, 0.2);
+    color: var(--primary-light);
 }
 
 .actions {
@@ -298,16 +298,16 @@
     justify-content: center;
     width: 28px;
     height: 28px;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    background: rgba(110, 150, 137, 0.15);
+    border: 1px solid rgba(110, 150, 137, 0.3);
     border-radius: 6px;
-    color: #818cf8;
+    color: var(--primary-light);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .testButton:hover:not(:disabled) {
-    background: rgba(99, 102, 241, 0.25);
+    background: rgba(110, 150, 137, 0.25);
     border-color: var(--primary);
 }
 
@@ -365,18 +365,18 @@
 .checkSquareIcon {
     width: 16px;
     height: 16px;
-    color: #818cf8;
+    color: var(--primary-light);
 }
 
 .squareIcon {
     width: 16px;
     height: 16px;
-    color: #64748b;
+    color: var(--muted);
 }
 
 .sourceItem.selected {
-    border-color: rgba(99, 102, 241, 0.5);
-    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(110, 150, 137, 0.5);
+    background: rgba(110, 150, 137, 0.1);
 }
 
 .selectAllButton {
@@ -384,15 +384,31 @@
     align-items: center;
     gap: 0.375rem;
     padding: 0.375rem 0.75rem;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    background: rgba(110, 150, 137, 0.15);
+    border: 1px solid rgba(110, 150, 137, 0.3);
     border-radius: 6px;
-    color: #a5b4fc;
+    color: var(--primary-light);
     font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .selectAllButton:hover {
-    background: rgba(99, 102, 241, 0.25);
+    background: rgba(110, 150, 137, 0.25);
+}
+.container { margin-bottom: 12px; background: var(--surface); }
+.toggleButton { text-align: left; min-height: 54px; }
+.actions { flex-wrap: wrap; }
+.sourceItem { border-radius: 3px; }
+.selectionButton, .toggleSourceButton, .testButton, .switchModeButton { min-width: 32px; min-height: 32px; flex-shrink: 0; }
+@media (max-width: 640px) {
+  .badges { display: none; } .chevron { margin-left: auto; }
+  .content { padding: 0 12px 12px; }
+  .sourceItem { display: grid; grid-template-columns: 44px 44px minmax(0, 1fr) 44px; gap: 8px; }
+  .sourceInfo { grid-column: 3; }
+  .sourceTypeRow { flex-wrap: wrap; }
+  .testButton { grid-column: 4; grid-row: 1; }
+  .sourceUrl { grid-column: 1 / -1; max-width: 100%; margin-left: 0; }
+  .statsSection { grid-column: 1 / -1; min-width: 0; }
+  .selectionButton, .toggleSourceButton, .testButton, .switchModeButton { min-width: 44px; min-height: 44px; }
 }

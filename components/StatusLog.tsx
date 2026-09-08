@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { X, Circle, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import styles from './StatusLog.module.css';
 
@@ -21,17 +21,10 @@ interface StatusLogProps {
 export function StatusLog({ logs, isRunning, onStop }: StatusLogProps) {
     const logContainerRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll to bottom when new logs come in
-    const scrollToBottom = () => {
-        if (logContainerRef.current) {
-            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-        }
-    };
-
-    // Call scrollToBottom after render
-    if (logs.length > 0) {
-        setTimeout(scrollToBottom, 10);
-    }
+    useEffect(() => {
+        const container = logContainerRef.current;
+        if (container && isRunning) container.scrollTop = container.scrollHeight;
+    }, [logs.length, isRunning]);
 
     const getIcon = (type: LogEntry['type']) => {
         switch (type) {
@@ -47,7 +40,7 @@ export function StatusLog({ logs, isRunning, onStop }: StatusLogProps) {
     };
 
     const formatTime = (date: Date) => {
-        return date.toLocaleTimeString('en-US', {
+        return new Date(date).toLocaleTimeString('en-GB', {
             hour12: false,
             hour: '2-digit',
             minute: '2-digit',
@@ -76,7 +69,7 @@ export function StatusLog({ logs, isRunning, onStop }: StatusLogProps) {
                 )}
             </div>
 
-            <div ref={logContainerRef} className={styles.logContainer}>
+            <div role="log" aria-label="Analysis activity" ref={logContainerRef} className={styles.logContainer}>
                 {logs.map((log) => (
                     <div key={log.id} className={`${styles.logEntry} ${styles[log.type]}`}>
                         <span className={styles.logTime}>{formatTime(log.timestamp)}</span>

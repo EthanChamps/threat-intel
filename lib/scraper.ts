@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
-import { getBrowser, closeBrowser } from './playwright-scraper';
-import type { BrowserContext } from 'playwright';
+import { PlaywrightCrawler } from 'crawlee';
+import { createCrawlConfiguration, browserCrawlOptions, runBrowserCrawl } from './crawler';
 
 export interface ScrapedArticle {
     url: string;
@@ -87,153 +87,81 @@ function isWithinDateRange(pubDate: string | undefined, startDate?: Date, endDat
     return true;
 }
 
-async function createBrowserContext(): Promise<BrowserContext> {
-    const browser = await getBrowser();
-    const context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        viewport: { width: 1920, height: 1080 },
-        locale: 'en-US',
-        timezoneId: 'America/New_York',
-        extraHTTPHeaders: {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Cache-Control': 'max-age=0',
-        },
-    });
+function extractArticle(url: string, html: string): ScrapedArticle {
+    const $ = cheerio.load(html);
+    // Extract date before removing elements
+    const pubDate = extractDate($);
 
-    return context;
-}
+    // Remove non-content elements
+    $('script, style, nav, header, footer, aside, .sidebar, .comments, .advertisement, .ad, .social-share').remove();
 
-async function scrapeArticleWithPlaywright(url: string, context: BrowserContext): Promise<ScrapedArticle> {
-    const page = await context.newPage();
+    // Extract title
+    const title = $('h1').first().text().trim() ||
+        $('meta[property="og:title"]').attr('content') ||
+        $('title').text().trim() ||
+        '';
 
-    // Anti-bot measures
-    await page.addInitScript(() => {
-        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-    });
+    // Extract main content - try common article selectors
+    const contentSelectors = [
+        'article',
+        '[role="main"]',
+        '.post-content',
+        '.article-content',
+        '.entry-content',
+        '.content',
+        'main',
+        '.blog-post',
+        '.post-body',
+    ];
 
-    try {
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        await page.waitForTimeout(1000); // Let page settle
-
-        const html = await page.content();
-        const $ = cheerio.load(html);
-
-        // Extract date before removing elements
-        const pubDate = extractDate($);
-
-        // Remove non-content elements
-        $('script, style, nav, header, footer, aside, .sidebar, .comments, .advertisement, .ad, .social-share').remove();
-
-        // Extract title
-        const title = $('h1').first().text().trim() ||
-            $('meta[property="og:title"]').attr('content') ||
-            $('title').text().trim() ||
-            '';
-
-        // Extract main content - try common article selectors
-        const contentSelectors = [
-            'article',
-            '[role="main"]',
-            '.post-content',
-            '.article-content',
-            '.entry-content',
-            '.content',
-            'main',
-            '.blog-post',
-            '.post-body',
-        ];
-
-        let content = '';
-        for (const selector of contentSelectors) {
-            const element = $(selector);
-            if (element.length > 0) {
-                content = element.text().trim();
-                if (content.length > 200) break;
-            }
+    let content = '';
+    for (const selector of contentSelectors) {
+        const element = $(selector);
+        if (element.length > 0) {
+            content = element.text().trim();
+            if (content.length > 200) break;
         }
-
-        // Fallback to body if no content found
-        if (!content || content.length < 200) {
-            content = $('body').text().trim();
-        }
-
-        // Clean up whitespace
-        content = content
-            .replace(/\s+/g, ' ')
-            .replace(/\n+/g, '\n')
-            .trim();
-
-        return { url, title, content, pubDate };
-    } catch (error) {
-        console.error(`[SCRAPER] Failed to scrape ${url}:`, error);
-        return { url, title: '', content: '' };
-    } finally {
-        await page.close();
     }
+
+    // Fallback to body if no content found
+    if (!content || content.length < 200) {
+        content = $('body').text().trim();
+    }
+
+    // Clean up whitespace
+    content = content
+        .replace(/\s+/g, ' ')
+        .replace(/\n+/g, '\n')
+        .trim();
+
+    return { url, title, content, pubDate };
 }
 
 export async function scrapeArticles(urls: string[], options?: ScrapeOptions): Promise<ScrapedArticle[]> {
-    const results: ScrapedArticle[] = [];
-    const batchSize = 3; // Reduced batch size for Playwright (more resource intensive)
-
-    // Parse date range if provided
-    let startDate: Date | undefined;
-    let endDate: Date | undefined;
-
-    if (options?.startDate) {
-        startDate = new Date(options.startDate);
-        startDate.setHours(0, 0, 0, 0);
-    }
-    if (options?.endDate) {
-        endDate = new Date(options.endDate);
-        endDate.setHours(23, 59, 59, 999);
-    }
-
-    let context: BrowserContext | null = null;
-
-    try {
-        context = await createBrowserContext();
-
-        for (let i = 0; i < urls.length; i += batchSize) {
-            const batch = urls.slice(i, i + batchSize);
-            const batchResults = await Promise.all(
-                batch.map(url => scrapeArticleWithPlaywright(url, context!))
-            );
-
-            // Filter by date range if specified
-            for (const article of batchResults) {
-                if (isWithinDateRange(article.pubDate, startDate, endDate)) {
-                    results.push(article);
-                } else if (article.pubDate) {
-                    console.log(`[SCRAPER] Filtered out ${article.url} - date ${article.pubDate} outside range`);
-                }
-            }
-
-            // Small delay between batches
-            if (i + batchSize < urls.length) {
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-        }
-
-        console.log(`[SCRAPER] Scraped ${results.filter(r => r.content.length > 0).length}/${urls.length} articles successfully`);
-        return results;
-    } catch (error) {
-        console.error('[SCRAPER] Error during scraping:', error);
-        await closeBrowser();
-        throw error;
-    } finally {
-        if (context) {
-            await context.close();
-        }
-    }
+    if (urls.length === 0) return [];
+    const results = new Map<string, ScrapedArticle>();
+    const uniqueUrls = [...new Set(urls)];
+    const start = options?.startDate ? new Date(`${options.startDate}T00:00:00Z`) : undefined;
+    const end = options?.endDate ? new Date(`${options.endDate}T23:59:59.999Z`) : undefined;
+    const crawler = new PlaywrightCrawler({
+        ...browserCrawlOptions,
+        maxRequestsPerCrawl: uniqueUrls.length,
+        async requestHandler({ page, request }) {
+            await page.locator('article, main, [role="main"], .post-content, .entry-content, h1').first()
+                .waitFor({ state: 'attached', timeout: 10000 });
+            await page.waitForFunction(() => (document.body.textContent || '').trim().length >= 100,
+                undefined, { timeout: 10000 });
+            const article = extractArticle(request.url, await page.content());
+            if (article.content.length < 100) throw new Error('Article has insufficient content');
+            results.set(request.url, article);
+        },
+        failedRequestHandler({ request }) {
+            results.set(request.url, { url: request.url, title: '', content: '' });
+        },
+    }, createCrawlConfiguration());
+    await runBrowserCrawl(crawler, uniqueUrls.map(url => ({ url, uniqueKey: url })));
+    return uniqueUrls.flatMap(url => {
+        const article = results.get(url);
+        return article && isWithinDateRange(article.pubDate, start, end) ? [article] : [];
+    });
 }

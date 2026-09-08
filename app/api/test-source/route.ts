@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Parser from 'rss-parser';
 import { ThreatSource } from '@/lib/sources';
-import { testScrapeSource, closeBrowser } from '@/lib/playwright-scraper';
+import { testScrapeSource } from '@/lib/source-crawler';
 
-const parser = new Parser();
+const parser = new Parser({ timeout: 15000 });
 
-export const maxDuration = 60;
+export const runtime = 'nodejs';
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
     try {
@@ -63,7 +64,8 @@ export async function POST(request: NextRequest) {
                         linkSelector: source.linkSelector || 'a',
                         dateSelector: source.dateSelector || 'time, .date, .published',
                         loadMoreSelector: source.loadMoreSelector,
-                        maxScrolls: source.maxScrolls || 3,
+                        maxScrolls: source.maxScrolls ?? 5,
+                        maxPages: source.maxPages ?? 1,
                         paginationPattern: source.paginationPattern || '/page/{n}/',
                     },
                     startDate,
@@ -75,7 +77,6 @@ export async function POST(request: NextRequest) {
                 totalBeforeFilter = result.totalBeforeFilter;
                 articleCount = result.articleCount;
             } catch (error) {
-                await closeBrowser();
                 return NextResponse.json({
                     success: false,
                     error: `Scrape failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -93,7 +94,6 @@ export async function POST(request: NextRequest) {
             logs: logs.length > 0 ? logs : undefined,
         });
     } catch (error) {
-        await closeBrowser();
         return NextResponse.json(
             { success: false, error: error instanceof Error ? error.message : 'An error occurred' },
             { status: 500 }

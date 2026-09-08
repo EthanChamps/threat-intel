@@ -1,6 +1,6 @@
 import Parser from 'rss-parser';
-import { ThreatSource, getEnabledSources, getRssSources, getScrapeSources } from './sources';
-import { scrapeWithPlaywright } from './playwright-scraper';
+import { ThreatSource, getEnabledSources } from './sources';
+import { crawlSource } from './source-crawler';
 
 export interface FeedItem {
     title: string;
@@ -11,55 +11,48 @@ export interface FeedItem {
     sourceType: 'rss' | 'scrape';
 }
 
-const parser = new Parser();
+const parser = new Parser({ timeout: 15000 });
 
 // Fetch articles from RSS sources
 async function fetchRssSource(source: ThreatSource): Promise<FeedItem[]> {
     try {
         console.log(`[RSS] Fetching: ${source.name}`);
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        try {
-            const feed = await parser.parseURL(source.url);
-            clearTimeout(timeoutId);
-
-            return feed.items.map((item) => ({
-                title: item.title || 'Untitled',
-                link: item.link || '',
-                pubDate: item.pubDate || item.isoDate || '',
-                contentSnippet: item.contentSnippet || item.summary || '',
-                sourceName: source.name,
-                sourceType: 'rss' as const,
-            }));
-        } catch (parseError) {
-            clearTimeout(timeoutId);
-            throw parseError;
-        }
+        const feed = await parser.parseURL(source.url);
+        return feed.items.map(item => ({
+            title: item.title || 'Untitled',
+            link: item.link || '',
+            pubDate: item.pubDate || item.isoDate || '',
+            contentSnippet: item.contentSnippet || item.summary || '',
+            sourceName: source.name,
+            sourceType: 'rss' as const,
+        }));
     } catch (error) {
         console.error(`[RSS] Failed to fetch ${source.name}:`, error instanceof Error ? error.message : error);
         return [];
     }
 }
 
-async function fetchScrapeSource(source: ThreatSource): Promise<FeedItem[]> {
+async function fetchScrapeSource(source: ThreatSource, startDate?: string, endDate?: string): Promise<FeedItem[]> {
     console.log(`[SCRAPE] Starting fetch for: ${source.name}`);
-    console.log(`[SCRAPE] Source config:`, JSON.stringify(source, null, 2));
     try {
-        console.log(`[SCRAPE] About to call scrapeWithPlaywright...`);
+        console.log(`[SCRAPE] About to call crawlSource...`);
 
-        const articles = await scrapeWithPlaywright(source.url, {
+        const articles = await crawlSource(source.url, {
             articleSelector: source.articleSelector || 'article, .post, .blog-item',
             titleSelector: source.titleSelector || 'h2, h3, .title',
             linkSelector: source.linkSelector || 'a',
             dateSelector: source.dateSelector || 'time, .date, .published',
             loadMoreSelector: source.loadMoreSelector,
-            maxScrolls: source.maxScrolls || 5,
+            maxScrolls: source.maxScrolls ?? 5,
+            maxPages: source.maxPages ?? 1,
+            paginationPattern: source.paginationPattern ?? '/page/{n}/',
+            startDate,
+            endDate,
             onLog: (msg) => console.log(`[SCRAPE:${source.name}] ${msg}`),
         });
 
-        console.log(`[SCRAPE] scrapeWithPlaywright returned ${articles.length} articles`);
+        console.log(`[SCRAPE] crawlSource returned ${articles.length} articles`);
 
         const items: FeedItem[] = articles.map((article) => ({
             title: article.title,
@@ -80,65 +73,37 @@ async function fetchScrapeSource(source: ThreatSource): Promise<FeedItem[]> {
 
 // Fetch from all enabled sources
 export async function fetchAllSources(): Promise<FeedItem[]> {
-    const rssSources = getRssSources();
-    const scrapeSources = getScrapeSources();
-
-    console.log(`Fetching from ${rssSources.length} RSS sources and ${scrapeSources.length} scrape sources`);
-
-    // Fetch RSS sources in parallel
-    const rssPromises = rssSources.map(fetchRssSource);
-
-    // Fetch scrape sources with some throttling
-    const scrapePromises = scrapeSources.map(async (source, index) => {
-        // Add small delay between scrape requests
-        await new Promise(resolve => setTimeout(resolve, index * 300));
-        return fetchScrapeSource(source);
-    });
-
-    const results = await Promise.all([...rssPromises, ...scrapePromises]);
-    const allItems = results.flat();
-
-    // Sort by date, newest first
-    allItems.sort((a, b) => {
-        const dateA = new Date(a.pubDate).getTime() || 0;
-        const dateB = new Date(b.pubDate).getTime() || 0;
-        return dateB - dateA;
-    });
-
-    console.log(`Total articles fetched: ${allItems.length}`);
-    return allItems;
+    const sources = getEnabledSources();
+    return collectSources(sources);
 }
 
-// Fetch with date range filtering
+async function collectSources(sources: ThreatSource[], startDate?: string, endDate?: string): Promise<FeedItem[]> {
+    const rss = Promise.all(sources.filter(source => source.type === 'rss').map(fetchRssSource));
+    const scraped: FeedItem[] = [];
+    // One listing crawler at a time keeps the total browser count bounded.
+    for (const source of sources.filter(source => source.type === 'scrape')) {
+        scraped.push(...await fetchScrapeSource(source, startDate, endDate));
+    }
+    return [...(await rss).flat(), ...scraped].sort((a, b) =>
+        (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
+}
+
 export async function fetchByDateRange(
     startDate?: string,
     endDate?: string,
     sources?: ThreatSource[]
 ): Promise<FeedItem[]> {
-    // If specific sources provided, use those; otherwise use enabled
-    let allItems: FeedItem[];
-
-    if (sources && sources.length > 0) {
-        const rssItems = await Promise.all(
-            sources.filter(s => s.type === 'rss').map(fetchRssSource)
-        );
-        const scrapeItems = await Promise.all(
-            sources.filter(s => s.type === 'scrape').map(fetchScrapeSource)
-        );
-        allItems = [...rssItems.flat(), ...scrapeItems.flat()];
-    } else {
-        allItems = await fetchAllSources();
-    }
-
     // Apply date filtering
-    const end = endDate ? new Date(endDate) : new Date();
-    end.setHours(23, 59, 59, 999);
+    const end = endDate ? new Date(`${endDate}T23:59:59.999Z`) : new Date();
+    end.setUTCHours(23, 59, 59, 999);
 
-    const start = startDate ? new Date(startDate) : new Date(end);
+    const start = startDate ? new Date(`${startDate}T00:00:00Z`) : new Date(end);
     if (!startDate) {
-        start.setDate(start.getDate() - 7);
+        start.setUTCDate(start.getUTCDate() - 7);
     }
-    start.setHours(0, 0, 0, 0);
+    start.setUTCHours(0, 0, 0, 0);
+
+    const allItems = await collectSources(sources ?? getEnabledSources(), start.toISOString().slice(0, 10), end.toISOString().slice(0, 10));
 
     console.log(`Filtering articles from ${start.toISOString()} to ${end.toISOString()}`);
 

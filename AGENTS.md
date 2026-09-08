@@ -31,4 +31,4 @@ Use short, imperative Conventional Commit-style subjects such as `feat: add sour
 
 ## Architecture & Safety Notes
 
-Preserve the Playwright singleton cleanup on route error paths. Keep STIX vocabulary arrays and the extraction system prompt in `lib/extractor.ts` synchronized. Treat scraped content and AI output as untrusted input, and avoid logging API keys or sensitive article data.
+Crawlee owns browser pools per crawl; preserve cleanup in `lib/crawler.ts` on success and error paths. Do not reintroduce global browser cleanup that can interrupt concurrent requests. Keep STIX vocabulary arrays and the extraction system prompt in `lib/extractor.ts` synchronized. Treat scraped content and AI output as untrusted input, and avoid logging API keys or sensitive article data.

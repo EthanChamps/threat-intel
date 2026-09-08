@@ -53,25 +53,27 @@ export function DateRangeFilter({ onChange }: DateRangeFilterProps) {
 
             <div className={styles.content}>
                 <div className={styles.presets}>
-                    <button onClick={() => setPreset(7)} className={styles.presetButton}>
+                    <button aria-pressed={endDate === formatDate(today) && startDate === formatDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7))} onClick={() => setPreset(7)} className={styles.presetButton}>
                         Last 7 days
                     </button>
-                    <button onClick={() => setPreset(14)} className={styles.presetButton}>
+                    <button aria-pressed={endDate === formatDate(today) && startDate === formatDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 14))} onClick={() => setPreset(14)} className={styles.presetButton}>
                         Last 2 weeks
                     </button>
-                    <button onClick={() => setPreset(30)} className={styles.presetButton}>
+                    <button aria-pressed={endDate === formatDate(today) && startDate === formatDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30))} onClick={() => setPreset(30)} className={styles.presetButton}>
                         Last month
                     </button>
-                    <button onClick={() => setPreset(90)} className={styles.presetButton}>
+                    <button aria-pressed={endDate === formatDate(today) && startDate === formatDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 90))} onClick={() => setPreset(90)} className={styles.presetButton}>
                         Last 3 months
                     </button>
                 </div>
 
                 <div className={styles.customRange}>
                     <div className={styles.dateField}>
-                        <label className={styles.dateLabel}>From</label>
+                        <label htmlFor="start-date" className={styles.dateLabel}>From</label>
                         <input
                             type="date"
+                            id="start-date"
+                            max={endDate}
                             value={startDate}
                             onChange={(e) => handleStartChange(e.target.value)}
                             className={styles.dateInput}
@@ -79,9 +81,11 @@ export function DateRangeFilter({ onChange }: DateRangeFilterProps) {
                     </div>
                     <span className={styles.rangeSeparator}>→</span>
                     <div className={styles.dateField}>
-                        <label className={styles.dateLabel}>To</label>
+                        <label htmlFor="end-date" className={styles.dateLabel}>To</label>
                         <input
                             type="date"
+                            id="end-date"
+                            min={startDate}
                             value={endDate}
                             onChange={(e) => handleEndChange(e.target.value)}
                             className={styles.dateInput}
@@ -94,7 +98,7 @@ export function DateRangeFilter({ onChange }: DateRangeFilterProps) {
 }
 
 function formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export function getDefaultDateRange(): DateRange {

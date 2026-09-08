@@ -1,6 +1,6 @@
 .container {
-    background: rgba(15, 23, 42, 0.8);
-    border-radius: 12px;
+    background: rgba(20, 23, 24, 0.8);
+    border-radius: 6px;
     border: 1px solid var(--border);
     margin-bottom: 1.5rem;
     overflow: hidden;
@@ -11,7 +11,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background: rgba(30, 41, 59, 0.6);
+    background: rgba(28, 32, 33, 0.6);
     border-bottom: 1px solid var(--border);
 }
 
@@ -41,7 +41,7 @@
 .headerTitle {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: #94a3b8;
+    color: var(--muted);
 }
 
 .stopButton {
@@ -91,7 +91,7 @@
 }
 
 .logEntry.info {
-    color: #94a3b8;
+    color: var(--muted);
 }
 
 .logEntry.success {
@@ -105,12 +105,12 @@
 }
 
 .logEntry.progress {
-    color: #818cf8;
-    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-light);
+    background: rgba(110, 150, 137, 0.1);
 }
 
 .logTime {
-    color: #475569;
+    color: var(--muted);
     font-size: 0.6875rem;
     flex-shrink: 0;
 }
@@ -125,7 +125,7 @@
 }
 
 .iconInfo {
-    color: #64748b;
+    color: var(--muted);
 }
 
 .iconSuccess {
@@ -137,7 +137,7 @@
 }
 
 .iconProgress {
-    color: #818cf8;
+    color: var(--primary-light);
     animation: spin 1s linear infinite;
 }
 
@@ -148,8 +148,8 @@
 
 .logPhase {
     padding: 0.125rem 0.375rem;
-    background: rgba(99, 102, 241, 0.2);
-    color: #a5b4fc;
+    background: rgba(110, 150, 137, 0.2);
+    color: var(--primary-light);
     border-radius: 3px;
     font-size: 0.625rem;
     text-transform: uppercase;

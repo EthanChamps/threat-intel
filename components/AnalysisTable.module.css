@@ -1,10 +1,10 @@
 .container {
   width: 100%;
-  background: rgba(15, 23, 42, 0.8);
-  border-radius: 12px;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: rgba(20, 23, 24, 0.8);
+  border-radius: 6px;
+  border: 1px solid rgba(110, 150, 137, 0.2);
   overflow: hidden;
-  backdrop-filter: blur(10px);
+
 }
 
 .header {
@@ -12,8 +12,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
-  background: rgba(30, 41, 59, 0.5);
+  border-bottom: 1px solid rgba(110, 150, 137, 0.2);
+  background: rgba(28, 32, 33, 0.5);
 }
 
 .headerLeft {
@@ -25,7 +25,7 @@
 .title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -34,7 +34,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 8px;
@@ -45,8 +45,8 @@
 }
 
 .exportButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+
+
 }
 
 .downloadIcon {
@@ -68,9 +68,9 @@
   text-align: left;
   padding: 0.75rem 1rem;
   font-weight: 600;
-  color: #94a3b8;
-  background: rgba(30, 41, 59, 0.8);
-  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+  color: var(--muted);
+  background: rgba(28, 32, 33, 0.8);
+  border-bottom: 1px solid rgba(110, 150, 137, 0.2);
   white-space: nowrap;
 }
 
@@ -79,13 +79,13 @@
 }
 
 .tr:hover {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(110, 150, 137, 0.1);
 }
 
 .td {
   padding: 0.75rem 1rem;
-  color: #e2e8f0;
-  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+  color: var(--foreground);
+  border-bottom: 1px solid rgba(110, 150, 137, 0.1);
   vertical-align: top;
 }
 
@@ -95,7 +95,7 @@
   gap: 0.25rem;
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--muted);
   cursor: pointer;
   font-weight: 600;
   font-size: 0.875rem;
@@ -103,7 +103,7 @@
 }
 
 .sortButton:hover {
-  color: #e2e8f0;
+  color: var(--foreground);
 }
 
 .sortIcon {
@@ -120,13 +120,13 @@
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  color: #818cf8;
+  color: var(--primary-light);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 .titleLink:hover {
-  color: #a5b4fc;
+  color: var(--primary-light);
 }
 
 .externalIcon {
@@ -139,8 +139,8 @@
 .tag {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
+  background: rgba(110, 150, 137, 0.15);
+  color: var(--primary-light);
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
@@ -152,8 +152,8 @@
 }
 
 .actorNameTag {
-  background: rgba(168, 85, 247, 0.15);
-  color: #c4b5fd;
+  background: rgba(110, 150, 137, 0.15);
+  color: var(--foreground);
 }
 
 .attackVectorTag {
@@ -164,14 +164,14 @@
 .notesCell {
   max-width: 300px;
   font-size: 0.8125rem;
-  color: #94a3b8;
+  color: var(--muted);
   line-height: 1.5;
 }
 
 .emptyState {
   padding: 3rem;
   text-align: center;
-  color: #64748b;
+  color: var(--muted);
 }
 
 /* Star / UK Finance Relevance styles */
@@ -229,5 +229,27 @@
 }
 
 .mutedText {
-  color: #475569;
+  color: var(--muted);
 }
+.header { gap: 16px; flex-wrap: wrap; background: var(--surface); }
+.headerLeft { flex-wrap: wrap; gap: 12px; }
+.title { font-size: 16px; }
+.exportButton { background: transparent; border: 1px solid var(--border); color: var(--foreground); min-height: 38px; border-radius: 4px; }
+.exportButton:hover:not(:disabled) { background: var(--surface-light); }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--border); }
+.search { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 200px; max-width: 440px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); }
+.search input { width: 100%; min-width: 0; border: none; background: transparent; font-size: 13px; color: var(--foreground); }
+.search:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+.search input:focus { outline: none; }
+.filterButton { min-height: 38px; padding: 8px 12px; border: 1px solid var(--border); background: transparent; color: var(--muted); border-radius: 4px; font-size: 12px; }
+.filterButton[aria-pressed="true"] { background: #30443a; color: #d5e8dd; border-color: #718b7d; }
+.resultCount { margin-left: auto; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.table { min-width: 1250px; }
+.titleCell { min-width: 250px; }
+.notesCell { min-width: 220px; }
+.relevanceCell { min-width: 180px; font-size: 12px; }
+.emptyState { padding: 52px 24px; display: flex; flex-direction: column; align-items: center; }
+.emptyState svg { color: var(--primary); margin-bottom: 16px; }
+.emptyState h3 { margin: 0 0 8px; font-size: 17px; font-weight: 500; color: var(--foreground); }
+.emptyState p { max-width: 400px; margin: 0 0 16px; font-size: 13px; line-height: 1.7; }
+@media (max-width: 640px) { .header, .toolbar { padding: 16px; } .search { max-width: none; flex-basis: 100%; } .search input { font-size: 16px; } }

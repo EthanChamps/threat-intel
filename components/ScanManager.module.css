@@ -1,6 +1,6 @@
 .container {
-    background: rgba(30, 41, 59, 0.5);
-    border-radius: 12px;
+    background: rgba(28, 32, 33, 0.5);
+    border-radius: 6px;
     border: 1px solid var(--border);
     margin-bottom: 1.5rem;
     overflow: hidden;
@@ -14,7 +14,7 @@
     padding: 1rem 1.25rem;
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--muted);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -22,7 +22,7 @@
 }
 
 .toggleButton:hover {
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(110, 150, 137, 0.1);
 }
 
 .icon {
@@ -33,7 +33,7 @@
 
 .title {
     font-weight: 500;
-    color: #e2e8f0;
+    color: var(--foreground);
 }
 
 .badges {
@@ -47,8 +47,8 @@
     border-radius: 4px;
     font-size: 0.6875rem;
     font-weight: 600;
-    background: rgba(99, 102, 241, 0.2);
-    color: #a5b4fc;
+    background: rgba(110, 150, 137, 0.2);
+    color: var(--primary-light);
 }
 
 .sizeBadge {
@@ -60,7 +60,7 @@
     font-size: 0.6875rem;
     font-weight: 600;
     background: rgba(100, 116, 139, 0.2);
-    color: #94a3b8;
+    color: var(--muted);
 }
 
 .tinyIcon {
@@ -132,7 +132,7 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    color: #64748b;
+    color: var(--muted);
     text-align: center;
 }
 
@@ -147,7 +147,7 @@
     margin: 0;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #94a3b8;
+    color: var(--muted);
 }
 
 .emptyState span {
@@ -169,19 +169,19 @@
     justify-content: space-between;
     gap: 0.75rem;
     padding: 0.75rem;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(20, 23, 24, 0.6);
     border-radius: 8px;
-    border: 1px solid rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(110, 150, 137, 0.15);
     transition: all 0.15s ease;
 }
 
 .scanItem:hover {
-    border-color: rgba(99, 102, 241, 0.3);
+    border-color: rgba(110, 150, 137, 0.3);
 }
 
 .scanItem.active {
-    border-color: rgba(99, 102, 241, 0.5);
-    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(110, 150, 137, 0.5);
+    background: rgba(110, 150, 137, 0.1);
 }
 
 .scanInfo {
@@ -195,7 +195,7 @@
 .scanName {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: #e2e8f0;
+    color: var(--foreground);
 }
 
 .scanMeta {
@@ -203,7 +203,7 @@
     align-items: center;
     gap: 0.75rem;
     font-size: 0.6875rem;
-    color: #64748b;
+    color: var(--muted);
 }
 
 .scanMeta span {
@@ -226,10 +226,10 @@
 
 .loadButton {
     padding: 0.375rem 0.625rem;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    background: rgba(110, 150, 137, 0.15);
+    border: 1px solid rgba(110, 150, 137, 0.3);
     border-radius: 6px;
-    color: #a5b4fc;
+    color: var(--primary-light);
     font-size: 0.6875rem;
     font-weight: 500;
     cursor: pointer;
@@ -237,7 +237,7 @@
 }
 
 .loadButton:hover {
-    background: rgba(99, 102, 241, 0.25);
+    background: rgba(110, 150, 137, 0.25);
     border-color: var(--primary);
 }
 
@@ -260,15 +260,15 @@
     background: rgba(100, 116, 139, 0.1);
     border: 1px solid rgba(100, 116, 139, 0.2);
     border-radius: 4px;
-    color: #64748b;
+    color: var(--muted);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .iconButton:hover {
-    background: rgba(99, 102, 241, 0.15);
-    border-color: rgba(99, 102, 241, 0.3);
-    color: #a5b4fc;
+    background: rgba(110, 150, 137, 0.15);
+    border-color: rgba(110, 150, 137, 0.3);
+    color: var(--primary-light);
 }
 
 .deleteButton:hover {
@@ -302,10 +302,10 @@
 .editInput {
     flex: 1;
     padding: 0.375rem 0.5rem;
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(99, 102, 241, 0.5);
+    background: rgba(20, 23, 24, 0.8);
+    border: 1px solid rgba(110, 150, 137, 0.5);
     border-radius: 4px;
-    color: #e2e8f0;
+    color: var(--foreground);
     font-size: 0.8125rem;
     outline: none;
 }
@@ -320,21 +320,21 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    background: rgba(110, 150, 137, 0.15);
+    border: 1px solid rgba(110, 150, 137, 0.3);
     border-radius: 4px;
-    color: #a5b4fc;
+    color: var(--primary-light);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .editAction:hover {
-    background: rgba(99, 102, 241, 0.25);
+    background: rgba(110, 150, 137, 0.25);
 }
 
 .helpText {
     margin-top: 0.75rem;
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--muted);
     line-height: 1.5;
 }

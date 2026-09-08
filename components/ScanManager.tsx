@@ -56,6 +56,8 @@ export function ScanManager({
     }, []);
 
     useEffect(() => {
+        // Browser storage is unavailable during server rendering; hydrate after mount.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         refreshScans();
     }, [refreshScans, currentScanId]);
 
@@ -91,7 +93,7 @@ export function ScanManager({
             deleteScan(scanId);
             refreshScans();
             setConfirmDelete(null);
-            onScanDeleted?.();
+            if (scanId === currentScanId) onScanDeleted?.();
         } else {
             setConfirmDelete(scanId);
             setTimeout(() => setConfirmDelete(null), 3000);
@@ -126,6 +128,7 @@ export function ScanManager({
         <div className={styles.container}>
             <button 
                 className={styles.toggleButton}
+                aria-expanded={isExpanded}
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <History className={styles.icon} />
@@ -275,7 +278,7 @@ export function ScanManager({
 
                     <p className={styles.helpText}>
                         Scans are saved automatically when analysis completes.
-                        Click a scan to load its results.
+                        Use Load to reopen a saved scan.
                     </p>
                 </div>
             )}

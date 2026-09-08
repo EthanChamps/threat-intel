@@ -1,4 +1,6 @@
-import { chromium, Browser, Page } from 'playwright';
+import type { Page } from 'playwright';
+import { PlaywrightCrawler, playwrightUtils } from 'crawlee';
+import { createCrawlConfiguration, browserCrawlOptions, runBrowserCrawl } from './crawler';
 
 export interface ScrapedArticleInfo {
     title: string;
@@ -8,7 +10,7 @@ export interface ScrapedArticleInfo {
 
 export type ScrapeLogger = (message: string) => void;
 
-export interface PlaywrightScrapeOptions {
+export interface SourceCrawlOptions {
     articleSelector: string;
     titleSelector: string;
     linkSelector: string;
@@ -22,54 +24,22 @@ export interface PlaywrightScrapeOptions {
     onLog?: ScrapeLogger;
 }
 
-const DEFAULT_OPTIONS: Partial<PlaywrightScrapeOptions> = {
+const DEFAULT_OPTIONS: Partial<SourceCrawlOptions> = {
     maxScrolls: 3,
     scrollDelay: 1000,
-    loadMoreClicks: 3,
+    loadMoreClicks: 10,
     maxPages: 1,
     paginationPattern: '/page/{n}/',
 };
 
-let browserInstance: Browser | null = null;
-
-export async function getBrowser(): Promise<Browser> {
-    if (!browserInstance || !browserInstance.isConnected()) {
-        browserInstance = await chromium.launch({
-            headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-blink-features=AutomationControlled',
-                '--disable-infobars',
-            ],
-        });
-    }
-    return browserInstance;
-}
-
-export async function closeBrowser(): Promise<void> {
-    if (browserInstance) {
-        await browserInstance.close();
-        browserInstance = null;
-    }
-}
-
 async function autoScroll(page: Page, maxScrolls: number, scrollDelay: number): Promise<void> {
-    let previousHeight = 0;
-    let scrollCount = 0;
-
-    while (scrollCount < maxScrolls) {
-        const currentHeight = await page.evaluate(() => document.body.scrollHeight);
-        
-        if (currentHeight === previousHeight) {
-            break;
-        }
-
-        previousHeight = currentHeight;
-        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-        await page.waitForTimeout(scrollDelay);
-        scrollCount++;
-    }
+    if (maxScrolls <= 0) return;
+    let scrolls = 0;
+    await playwrightUtils.infiniteScroll(page, {
+        timeoutSecs: Math.max(1, Math.ceil(maxScrolls * scrollDelay / 1000)),
+        waitForSecs: Math.max(1, Math.ceil(scrollDelay / 1000)),
+        stopScrollCallback: () => ++scrolls >= maxScrolls,
+    });
 }
 
 async function clickLoadMoreUntilDate(
@@ -106,19 +76,13 @@ async function clickLoadMoreUntilDate(
 
             await button.scrollIntoViewIfNeeded();
             
-            await Promise.all([
-                page.waitForResponse(
-                    (response) => response.url().includes('admin-ajax.php'),
-                    { timeout: 10000 }
-                ).catch(() => {}),
-                page.evaluate((sel) => {
-                    const btn = document.querySelector(sel) as HTMLElement;
-                    if (btn) btn.click();
-                }, selector),
-            ]);
-            
+            await button.click();
             clickCount++;
-            await page.waitForTimeout(delay);
+            await page.waitForFunction(
+                ({ selector, previousCount }) => document.querySelectorAll(selector).length > previousCount,
+                { selector: articleSelector, previousCount: previousArticleCount },
+                { timeout: Math.max(1000, delay * 3) }
+            );
 
             const newArticleCount = await page.evaluate(
                 (sel) => document.querySelectorAll(sel).length,
@@ -171,13 +135,12 @@ async function clickLoadMoreUntilDate(
 async function scrapeSinglePage(
     page: Page,
     url: string,
-    opts: PlaywrightScrapeOptions,
+    opts: SourceCrawlOptions,
     startTime: number | null = null,
     log: ScrapeLogger = () => {}
 ): Promise<ScrapedArticleInfo[]> {
     log(`Loading page: ${url}`);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(2000);
+    await page.locator(opts.articleSelector).first().waitFor({ state: 'attached', timeout: 10000 });
 
     if (opts.loadMoreSelector) {
         log(`Using "Load More" button: ${opts.loadMoreSelector}`);
@@ -188,8 +151,8 @@ async function scrapeSinglePage(
             opts.dateSelector,
             startTime,
             log,
-            50,
-            2500
+            opts.loadMoreClicks!,
+            opts.scrollDelay!
         );
     } else {
         log(`Auto-scrolling page (max ${opts.maxScrolls} scrolls)`);
@@ -234,7 +197,7 @@ async function scrapeSinglePage(
                     }
                 }
 
-                if (title && link) {
+                if (title && /^https?:\/\//i.test(link)) {
                     const isDuplicate = results.some((r) => r.link === link);
                     if (!isDuplicate) {
                         results.push({ title, link, date });
@@ -267,122 +230,60 @@ function buildPageUrl(baseUrl: string, pageNum: number, pattern: string): string
     return url.toString();
 }
 
-export interface ScrapeWithDateOptions extends PlaywrightScrapeOptions {
+export interface ScrapeWithDateOptions extends SourceCrawlOptions {
     startDate?: string;
     endDate?: string;
 }
 
-export async function scrapeWithPlaywright(
+export async function crawlSource(
     url: string,
     options: ScrapeWithDateOptions
 ): Promise<ScrapedArticleInfo[]> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
-    const log = opts.onLog || ((msg: string) => console.log(`[PLAYWRIGHT] ${msg}`));
-    
-    log(`Starting Playwright scrape for: ${url}`);
-    if (opts.startDate) log(`Date filter: from ${opts.startDate}`);
-    if (opts.endDate) log(`Date filter: to ${opts.endDate}`);
-    
-    log('Getting browser...');
-    const browser = await getBrowser();
-    log('Browser obtained');
-    
-    const context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        viewport: { width: 1920, height: 1080 },
-        locale: 'en-US',
-        timezoneId: 'America/New_York',
-        extraHTTPHeaders: {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'Cache-Control': 'max-age=0',
+    const log = opts.onLog || (() => {});
+    const maxPages = Math.max(1, Math.min(50, opts.maxPages ?? 1));
+    const startTime = opts.startDate ? new Date(`${opts.startDate}T00:00:00Z`).getTime() : null;
+    const articles = new Map<string, ScrapedArticleInfo>();
+    let firstPageError: Error | undefined;
+    const crawler = new PlaywrightCrawler({
+        ...browserCrawlOptions,
+        maxConcurrency: 1,
+        maxRequestsPerCrawl: opts.loadMoreSelector ? 1 : maxPages,
+        requestHandlerTimeoutSecs: 120,
+        async requestHandler({ page, request, crawler }) {
+            const pageNumber = Number(request.userData.pageNumber);
+            const found = await scrapeSinglePage(page, request.loadedUrl || request.url, opts, startTime, log);
+            let added = 0;
+            for (const article of found) {
+                if (!articles.has(article.link)) {
+                    articles.set(article.link, article);
+                    added++;
+                }
+            }
+            log(`Page ${pageNumber}: ${found.length} listings, ${added} new`);
+            const allOlder = startTime !== null && found.length > 0 && found.every(article =>
+                article.date && new Date(article.date).getTime() < startTime);
+            if (!opts.loadMoreSelector && added > 0 && !allOlder && pageNumber < maxPages) {
+                await crawler.addRequests([{
+                    url: buildPageUrl(url, pageNumber + 1, opts.paginationPattern!),
+                    userData: { pageNumber: pageNumber + 1 },
+                }]);
+            }
         },
-    });
-    const page = await context.newPage();
-
-    await page.addInitScript(() => {
-        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-    });
-
-    const startTime = opts.startDate ? new Date(opts.startDate).getTime() : null;
-    const maxPages = opts.maxPages || 50;
-
-    try {
-        const allArticles: ScrapedArticleInfo[] = [];
-        const seenLinks = new Set<string>();
-
-        if (opts.loadMoreSelector) {
-            log('Using "Load More" mode');
-            const pageArticles = await scrapeSinglePage(page, url, opts, startTime, log);
-            for (const article of pageArticles) {
-                if (!seenLinks.has(article.link)) {
-                    seenLinks.add(article.link);
-                    allArticles.push(article);
-                }
-            }
-            log(`Collected ${allArticles.length} unique articles`);
-        } else {
-            log('Using pagination mode');
-            for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
-                const pageUrl = pageNum === 1 ? url : buildPageUrl(url, pageNum, opts.paginationPattern!);
-                
-                try {
-                    const pageArticles = await scrapeSinglePage(page, pageUrl, opts, startTime, log);
-                    
-                    if (pageArticles.length === 0 && pageNum > 1) {
-                        log(`Page ${pageNum} returned no articles, stopping pagination`);
-                        break;
-                    }
-
-                    let oldArticleCount = 0;
-                    for (const article of pageArticles) {
-                        if (!seenLinks.has(article.link)) {
-                            seenLinks.add(article.link);
-                            allArticles.push(article);
-                            
-                            if (startTime && article.date) {
-                                const articleTime = new Date(article.date).getTime();
-                                if (articleTime < startTime) {
-                                    oldArticleCount++;
-                                }
-                            }
-                        }
-                    }
-
-                    log(`Page ${pageNum}: found ${pageArticles.length} articles, ${oldArticleCount} older than date range`);
-
-                    if (startTime && oldArticleCount > 0 && oldArticleCount >= pageArticles.length / 2) {
-                        log('More than half of articles are older than date range, stopping pagination');
-                        break;
-                    }
-                } catch {
-                    if (pageNum === 1) throw new Error(`Failed to load ${pageUrl}`);
-                    log(`Failed to load page ${pageNum}, stopping pagination`);
-                    break;
-                }
-            }
-            log(`Collected ${allArticles.length} unique articles across pages`);
-        }
-
-        return allArticles;
-    } finally {
-        await context.close();
-        log('Browser context closed');
-    }
+        failedRequestHandler({ request }) {
+            log(`Page ${request.userData.pageNumber} failed after retries`);
+            if (request.userData.pageNumber === 1) firstPageError = new Error('Source could not be loaded or its article selector no longer matches.');
+        },
+    }, createCrawlConfiguration());
+    // Crawlee owns pages and browsers; run() tears down its pool on success and errors.
+    await runBrowserCrawl(crawler, [{ url, userData: { pageNumber: 1 } }]);
+    if (firstPageError) throw firstPageError;
+    return [...articles.values()];
 }
 
 export async function testScrapeSource(
     url: string,
-    options: PlaywrightScrapeOptions,
+    options: SourceCrawlOptions,
     startDate?: string,
     endDate?: string,
     onLog?: ScrapeLogger
@@ -395,7 +296,7 @@ export async function testScrapeSource(
     
     log(`Testing scrape source: ${url}`);
     
-    const allArticles = await scrapeWithPlaywright(url, {
+    const allArticles = await crawlSource(url, {
         ...options,
         startDate,
         endDate,
@@ -403,8 +304,8 @@ export async function testScrapeSource(
     });
     const totalBeforeFilter = allArticles.length;
 
-    const startTime = startDate ? new Date(startDate).getTime() : null;
-    const endTime = endDate ? new Date(endDate + 'T23:59:59').getTime() : null;
+    const startTime = startDate ? new Date(startDate + 'T00:00:00Z').getTime() : null;
+    const endTime = endDate ? new Date(endDate + 'T23:59:59.999Z').getTime() : null;
 
     log(`Filtering ${totalBeforeFilter} articles by date range`);
 

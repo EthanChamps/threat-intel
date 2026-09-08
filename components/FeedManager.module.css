@@ -1,6 +1,6 @@
 .container {
-    background: rgba(30, 41, 59, 0.5);
-    border-radius: 12px;
+    background: rgba(28, 32, 33, 0.5);
+    border-radius: 6px;
     border: 1px solid var(--border);
     margin-bottom: 1.5rem;
     overflow: hidden;
@@ -14,7 +14,7 @@
     padding: 1rem 1.25rem;
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--muted);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -22,7 +22,7 @@
 }
 
 .toggleButton:hover {
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(110, 150, 137, 0.1);
 }
 
 .rssIcon {
@@ -53,16 +53,16 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.625rem 0.75rem;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(20, 23, 24, 0.6);
     border-radius: 8px;
-    border: 1px solid rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(110, 150, 137, 0.15);
 }
 
 .feedLink {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #818cf8;
+    color: var(--primary-light);
     text-decoration: none;
     font-size: 0.8125rem;
     font-family: monospace;
@@ -73,7 +73,7 @@
 }
 
 .feedLink:hover {
-    color: #a5b4fc;
+    color: var(--primary-light);
 }
 
 .externalIcon {
@@ -90,7 +90,7 @@
     padding: 0.375rem;
     background: none;
     border: none;
-    color: #64748b;
+    color: var(--muted);
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.15s ease;
@@ -115,22 +115,22 @@
 .input {
     flex: 1;
     padding: 0.625rem 0.875rem;
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(20, 23, 24, 0.8);
     border: 1px solid var(--border);
     border-radius: 8px;
-    color: #e2e8f0;
+    color: var(--foreground);
     font-size: 0.875rem;
     font-family: monospace;
 }
 
 .input::placeholder {
-    color: #475569;
+    color: var(--muted);
 }
 
 .input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    box-shadow: 0 0 0 2px rgba(110, 150, 137, 0.2);
 }
 
 .addButton {
@@ -160,13 +160,13 @@
 .hint {
     margin-top: 0.75rem;
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--muted);
 }
 
 .hint code {
     padding: 0.125rem 0.375rem;
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(110, 150, 137, 0.15);
     border-radius: 4px;
     font-family: monospace;
-    color: #a5b4fc;
+    color: var(--primary-light);
 }

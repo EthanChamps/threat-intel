@@ -100,6 +100,7 @@ export function SourceManager({ onSourcesChange, onSelectedSourcesChange, dateRa
     const handleReset = () => {
         resetToDefaults();
         setSources(DEFAULT_SOURCES);
+        setSelectedIds(new Set(DEFAULT_SOURCES.filter(source => source.enabled).map(source => source.id)));
         setSourceStats({});
         onSourcesChange?.();
     };
@@ -153,7 +154,6 @@ export function SourceManager({ onSourcesChange, onSelectedSourcesChange, dateRa
         }
     };
 
-    const enabledCount = sources.filter(s => s.enabled).length;
     const selectedCount = selectedIds.size;
     const rssCount = sources.filter(s => s.type === 'rss' && s.enabled).length;
     const scrapeCount = sources.filter(s => s.type === 'scrape' && s.enabled).length;
@@ -164,10 +164,11 @@ export function SourceManager({ onSourcesChange, onSelectedSourcesChange, dateRa
         <div className={styles.container}>
             <button
                 className={styles.toggleButton}
+                aria-expanded={isExpanded}
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <Globe className={styles.icon} />
-                <span>Threat Intel Sources ({selectedCount} selected for analysis)</span>
+                <span>Sources ({selectedCount} selected)</span>
                 <span className={styles.badges}>
                     <span className={styles.rssBadge}>{rssCount} RSS</span>
                     <span className={styles.scrapeBadge}>{scrapeCount} Scrape</span>
@@ -191,7 +192,7 @@ export function SourceManager({ onSourcesChange, onSelectedSourcesChange, dateRa
                                 <><CheckSquare className={styles.smallIcon} /> Select All</>
                             )}
                         </button>
-                        <button onClick={testAllSources} className={styles.testAllButton}>
+                        <button onClick={testAllSources} disabled={selectedCount === 0 || Object.values(sourceStats).some(stat => stat.loading)} className={styles.testAllButton}>
                             <Play className={styles.smallIcon} />
                             Test Selected
                         </button>
@@ -210,6 +211,8 @@ export function SourceManager({ onSourcesChange, onSelectedSourcesChange, dateRa
                                     className={`${styles.sourceItem} ${source.enabled ? styles.enabled : styles.disabled} ${selectedIds.has(source.id) ? styles.selected : ''}`}
                                 >
                                     <button
+                                        aria-label={`Select ${source.name}`}
+                                        aria-pressed={selectedIds.has(source.id)}
                                         onClick={() => source.enabled && toggleSelection(source.id)}
                                         className={styles.selectionButton}
                                         disabled={!source.enabled}

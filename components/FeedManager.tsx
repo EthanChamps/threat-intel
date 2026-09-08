@@ -22,6 +22,8 @@ export function FeedManager() {
     useEffect(() => {
         const stored = localStorage.getItem('threat-intel-feeds');
         if (stored) {
+            // Browser storage must be read after the server-rendered shell mounts.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setFeeds(JSON.parse(stored));
         } else {
             setFeeds(DEFAULT_FEEDS);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Shield, AlertTriangle, Zap, StopCircle } from 'lucide-react';
+import { Shield, AlertTriangle, ArrowRight, StopCircle } from 'lucide-react';
 import { AnalysisTable } from '@/components/AnalysisTable';
 import { SourceManager } from '@/components/SourceManager';
 import { ScanManager } from '@/components/ScanManager';
@@ -41,6 +41,7 @@ export default function Home() {
   const [currentScanId, setCurrentScanIdState] = useState<string | null>(null);
   const currentScanRef = useRef<StoredScan | null>(null);
 
+  const logsRef = useRef<LogEntry[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -78,7 +79,8 @@ export default function Home() {
       type,
       phase,
     };
-    setLogs(prev => [...prev, entry]);
+    logsRef.current = [...logsRef.current, entry];
+    setLogs(logsRef.current);
   }, []);
 
   const stopAnalysis = useCallback(() => {
@@ -129,6 +131,7 @@ export default function Home() {
   }, [currentScanId, handleNewScan]);
 
   const runAnalysis = async () => {
+    logsRef.current = [];
     setLoading(true);
     setError(null);
     setLogs([]);
@@ -176,6 +179,8 @@ export default function Home() {
 
       const decoder = new TextDecoder();
       let buffer = '';
+      let currentEvent = '';
+      let currentData = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -188,8 +193,6 @@ export default function Home() {
         const lines = buffer.split('\n');
         buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
-        let currentEvent = '';
-        let currentData = '';
 
         for (const line of lines) {
           if (line.startsWith('event: ')) {
@@ -273,7 +276,7 @@ export default function Home() {
               scrapeFailed: finalStats.scrapeFailed,
               analysisFailed: finalStats.analysisFailed,
             };
-            currentScanRef.current.logs = logs;
+            currentScanRef.current.logs = logsRef.current;
             saveScan(currentScanRef.current);
           }
         }
@@ -281,54 +284,65 @@ export default function Home() {
     }
   };
 
+  const invalidRange = !dateRange.startDate || !dateRange.endDate || dateRange.startDate > dateRange.endDate;
+
   return (
     <div className={styles.container}>
+      <a href="#workspace" className={styles.skipLink}>Skip to workspace</a>
       <header className={styles.header}>
         <div className={styles.logo}>
-          <Shield className={styles.logoIcon} />
-          <h1 className={styles.title}>Threat Intel Analyst</h1>
+          <Shield className={styles.logoIcon} aria-hidden="true" />
+          <span className={styles.title}>Threat Intel<span className={styles.brandDivider}>/</span>Analyst</span>
         </div>
-        <p className={styles.subtitle}>
-          AI-powered cyber threat intelligence extraction (STIX 2.1)
-        </p>
+        <span className={styles.subtitle}>Research workspace</span>
       </header>
 
-      <main className={styles.main}>
-        <section className={styles.controlPanel}>
+      <main id="workspace" className={styles.main}>
+        <div className={styles.pageHeading}>
+          <div>
+            <p className={styles.eyebrow}>COLLECT · REVIEW · INVESTIGATE</p>
+            <h1>Threat intelligence</h1>
+            <p className={styles.intro}>Turn security reporting into a focused intelligence brief.</p>
+          </div>
+          <span className={styles.workspaceStatus} role="status">{loading ? 'Analysis in progress' : 'Manual collection'}</span>
+        </div>
+
+        <fieldset className={styles.setup} disabled={loading}>
+          <legend className={styles.sectionLabel}>01 / Collection setup</legend>
+          <DateRangeFilter onChange={setDateRange} />
+          <SourceManager dateRange={dateRange} onSelectedSourcesChange={setSelectedSources} />
+        </fieldset>
+
+        <section className={styles.controlPanel} aria-label="Run collection">
           <div className={styles.panelContent}>
             <div className={styles.panelInfo}>
-              <h2 className={styles.panelTitle}>Threat Analysis</h2>
+              <h2 className={styles.panelTitle}>{selectedSources.length} sources selected</h2>
               <p className={styles.panelDescription}>
-                Aggregate and analyze articles from multiple threat intel sources.
-                Results use STIX 2.1 vocabulary for sectors and threat actor types.
+                {invalidRange ? 'Choose a valid date range. The start must be on or before the end.' : selectedSources.length === 0 ? 'Expand Sources and select at least one to continue.' : 'Collect articles in this period and analyse their relevance to UK finance.'}
               </p>
             </div>
-
             {loading ? (
               <button onClick={stopAnalysis} className={styles.stopButton}>
-                <StopCircle className={styles.buttonIcon} />
-                Stop Analysis
+                <StopCircle className={styles.buttonIcon} aria-hidden="true" /> Stop analysis
               </button>
             ) : (
-              <button onClick={runAnalysis} className={styles.analyzeButton}>
-                <Zap className={styles.buttonIcon} />
-                Run Analysis
+              <button onClick={runAnalysis} disabled={selectedSources.length === 0 || invalidRange} className={styles.analyzeButton}>
+                Run analysis <ArrowRight className={styles.buttonIcon} aria-hidden="true" />
               </button>
             )}
           </div>
-
           {stats && (
             <div className={styles.statsBar}>
               <span className={styles.stat}>
                 <strong>{stats.total}</strong> articles fetched
               </span>
-              <span className={styles.statDivider}>•</span>
+              <span className={styles.statDivider}>&middot;</span>
               <span className={styles.stat}>
                 <strong>{stats.analyzed}</strong> successfully analyzed
               </span>
               {stats.sourceStats && Object.keys(stats.sourceStats).length > 0 && (
                 <>
-                  <span className={styles.statDivider}>•</span>
+                  <span className={styles.statDivider}>&middot;</span>
                   <span className={styles.stat}>
                     from <strong>{Object.keys(stats.sourceStats).length}</strong> sources
                   </span>
@@ -336,9 +350,9 @@ export default function Home() {
               )}
               {stats.newArticles !== undefined && (
                 <>
-                  <span className={styles.statDivider}>â€¢</span>
+                  <span className={styles.statDivider}>&middot;</span>
                   <span className={styles.stat}><strong>{stats.newArticles}</strong> newly scraped</span>
-                  <span className={styles.statDivider}>â€¢</span>
+                  <span className={styles.statDivider}>&middot;</span>
                   <span className={styles.stat}><strong>{stats.reusedArticles || 0}</strong> reused</span>
                 </>
               )}
@@ -348,39 +362,31 @@ export default function Home() {
 
         <StatusLog logs={logs} isRunning={loading} onStop={stopAnalysis} />
 
-        <ScanManager 
-          currentScanId={currentScanId}
-          onLoadScan={handleLoadScan}
-          onNewScan={handleNewScan}
-          onScanDeleted={handleScanDeleted}
-        />
-
-        <SourceManager dateRange={dateRange} onSelectedSourcesChange={setSelectedSources} />
-
-        <DateRangeFilter onChange={setDateRange} />
-
-        <section className={styles.limitSection}>
-          <div className={styles.limitLabel}>
-            <span>Collection scope</span>
-            <span>All articles in the selected date range are collected and reused from SQLite on later runs.</span>
-          </div>
-        </section>
+        <fieldset className={styles.history} disabled={loading}>
+          <ScanManager
+            key={loading ? 'running' : 'idle'}
+            currentScanId={currentScanId}
+            onLoadScan={handleLoadScan}
+            onNewScan={handleNewScan}
+            onScanDeleted={handleScanDeleted}
+          />
+        </fieldset>
 
         {error && (
-          <div className={styles.errorBanner}>
+          <div className={styles.errorBanner} role="alert">
             <AlertTriangle className={styles.errorIcon} />
             <span>{error}</span>
           </div>
         )}
 
         <section className={styles.resultsSection}>
-          <AnalysisTable data={analyses} />
+          <AnalysisTable data={analyses} isRunning={loading} hasCompleted={stats !== null} />
         </section>
       </main>
 
       <footer className={styles.footer}>
         <p>
-          Powered by <strong>Vercel AI SDK</strong> + <strong>Google Gemini</strong>
+          STIX 2.1 vocabulary · Review findings against the original reporting.
         </p>
       </footer>
     </div>
