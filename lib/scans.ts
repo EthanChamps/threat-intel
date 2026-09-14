@@ -12,6 +12,9 @@ export interface ScanStats {
     reusedArticles?: number;
     scrapeFailed?: number;
     analysisFailed?: number;
+    preFiltered?: number;
+    triageSkipped?: number;
+    belowBar?: number;
 }
 
 export interface StoredScan {

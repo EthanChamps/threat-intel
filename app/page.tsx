@@ -28,6 +28,9 @@ interface Stats {
   reusedArticles?: number;
   scrapeFailed?: number;
   analysisFailed?: number;
+  preFiltered?: number;
+  triageSkipped?: number;
+  belowBar?: number;
 }
 
 export default function Home() {
@@ -62,6 +65,9 @@ export default function Home() {
           reusedArticles: mostRecent.stats.reusedArticles,
           scrapeFailed: mostRecent.stats.scrapeFailed,
           analysisFailed: mostRecent.stats.analysisFailed,
+          preFiltered: mostRecent.stats.preFiltered,
+          triageSkipped: mostRecent.stats.triageSkipped,
+          belowBar: mostRecent.stats.belowBar,
         });
       }
       setLogs(mostRecent.logs);
@@ -102,6 +108,9 @@ export default function Home() {
           reusedArticles: scan.stats.reusedArticles,
           scrapeFailed: scan.stats.scrapeFailed,
           analysisFailed: scan.stats.analysisFailed,
+          preFiltered: scan.stats.preFiltered,
+          triageSkipped: scan.stats.triageSkipped,
+          belowBar: scan.stats.belowBar,
       });
     } else {
       setStats(null);
@@ -261,6 +270,9 @@ export default function Home() {
             reusedArticles: data.reusedArticles as number,
             scrapeFailed: data.scrapeFailed as number,
             analysisFailed: data.analysisFailed as number,
+            preFiltered: data.preFiltered as number | undefined,
+            triageSkipped: data.triageSkipped as number | undefined,
+            belowBar: data.belowBar as number | undefined,
           };
           setAnalyses(finalAnalyses);
           setStats(finalStats);
@@ -275,6 +287,9 @@ export default function Home() {
               reusedArticles: finalStats.reusedArticles,
               scrapeFailed: finalStats.scrapeFailed,
               analysisFailed: finalStats.analysisFailed,
+              preFiltered: finalStats.preFiltered,
+              triageSkipped: finalStats.triageSkipped,
+              belowBar: finalStats.belowBar,
             };
             currentScanRef.current.logs = logsRef.current;
             saveScan(currentScanRef.current);
@@ -354,6 +369,12 @@ export default function Home() {
                   <span className={styles.stat}><strong>{stats.newArticles}</strong> newly scraped</span>
                   <span className={styles.statDivider}>&middot;</span>
                   <span className={styles.stat}><strong>{stats.reusedArticles || 0}</strong> reused</span>
+                </>
+              )}
+              {((stats.preFiltered || 0) + (stats.triageSkipped || 0) + (stats.belowBar || 0)) > 0 && (
+                <>
+                  <span className={styles.statDivider}>&middot;</span>
+                  <span className={styles.stat}><strong>{(stats.preFiltered || 0) + (stats.triageSkipped || 0) + (stats.belowBar || 0)}</strong> filtered as not client-worthy</span>
                 </>
               )}
             </div>

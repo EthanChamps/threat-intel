@@ -21,19 +21,34 @@ interface AnalysisTableProps {
 
 const columnHelper = createColumnHelper<ThreatAnalysis>();
 
+function isWorthy(row: ThreatAnalysis): boolean {
+    // Backward compatible with scans saved before the reporting-bar fields existed.
+    if (typeof (row as Partial<ThreatAnalysis>).reportWorthy === 'boolean') {
+        return (row as Partial<ThreatAnalysis>).reportWorthy === true;
+    }
+    return row.ukFinanceRelevance === true;
+}
+
+function severityOf(row: ThreatAnalysis): string {
+    return (row as Partial<ThreatAnalysis>).severity || 'medium';
+}
+
 export function AnalysisTable({ data, isRunning = false, hasCompleted = false }: AnalysisTableProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
 
     const [query, setQuery] = useState('');
     const [financeOnly, setFinanceOnly] = useState(false);
+    const [worthyOnly, setWorthyOnly] = useState(true);
     const filteredData = useMemo(() => {
         const search = query.trim().toLowerCase();
         return data.filter(row => (!financeOnly || row.ukFinanceRelevance) &&
-            (!search || [row.title, row.targetCountry, row.targetSector, row.threatActorName, row.threatActorType, row.attackPattern, row.interestingNotes, row.relevanceReason].some(value => value?.toLowerCase().includes(search))));
-    }, [data, query, financeOnly]);
+            (!worthyOnly || isWorthy(row)) &&
+            (!search || [row.title, row.targetCountry, row.targetSector, row.threatActorName, row.threatActorType, row.attackPattern, row.interestingNotes, row.relevanceReason, severityOf(row)].some(value => value?.toLowerCase().includes(search))));
+    }, [data, query, financeOnly, worthyOnly]);
 
     // Count starred articles
     const starredCount = useMemo(() => data.filter(d => d.ukFinanceRelevance).length, [data]);
+    const worthyCount = useMemo(() => data.filter(isWorthy).length, [data]);
 
     const columns = useMemo(
         () => [
@@ -128,6 +143,12 @@ export function AnalysisTable({ data, isRunning = false, hasCompleted = false }:
                     </span>
                 ),
             }),
+            columnHelper.accessor('severity' as keyof ThreatAnalysis, {
+                header: 'Severity',
+                cell: (info) => (
+                    <span className={styles.tag}>{severityOf(info.row.original).toUpperCase()}</span>
+                ),
+            }),
             columnHelper.accessor('relevanceReason', {
                 header: 'UK Finance Relevance',
                 cell: (info) => {
@@ -161,6 +182,8 @@ export function AnalysisTable({ data, isRunning = false, hasCompleted = false }:
 
     const exportToCSV = () => {
         const headers = [
+            'Client Worthy',
+            'Severity',
             'UK Finance Relevant',
             'Title',
             'URL',
@@ -173,6 +196,8 @@ export function AnalysisTable({ data, isRunning = false, hasCompleted = false }:
             'Notes'
         ];
         const rows = table.getRowModel().rows.map(({ original: row }) => [
+            isWorthy(row) ? 'YES' : 'NO',
+            severityOf(row),
             row.ukFinanceRelevance ? 'YES' : 'NO',
             row.title,
             row.url,
@@ -205,6 +230,12 @@ export function AnalysisTable({ data, isRunning = false, hasCompleted = false }:
             <div className={styles.header}>
                 <div className={styles.headerLeft}>
                     <h2 className={styles.title}>Intelligence brief</h2>
+                    {worthyCount > 0 && (
+                        <span className={styles.starBadge}>
+                            <Star className={styles.starBadgeIcon} />
+                            {worthyCount} client-worthy
+                        </span>
+                    )}
                     {starredCount > 0 && (
                         <span className={styles.starBadge}>
                             <Star className={styles.starBadgeIcon} />
@@ -223,6 +254,7 @@ export function AnalysisTable({ data, isRunning = false, hasCompleted = false }:
                     <Search size={16} aria-hidden="true" />
                     <input aria-label="Search intelligence" placeholder="Search articles, actors or sectors…" value={query} onChange={event => setQuery(event.target.value)} />
                 </label>
+                <button className={styles.filterButton} aria-pressed={worthyOnly} onClick={() => setWorthyOnly(!worthyOnly)}>Client-worthy only</button>
                 <button className={styles.filterButton} aria-pressed={financeOnly} onClick={() => setFinanceOnly(!financeOnly)}>UK finance only</button>
                 <span className={styles.resultCount} role="status">{filteredData.length} of {data.length} articles</span>
             </div>
@@ -264,7 +296,7 @@ export function AnalysisTable({ data, isRunning = false, hasCompleted = false }:
                     <FileText size={28} aria-hidden="true" />
                     <h3>{data.length > 0 ? 'No matching articles' : isRunning ? 'Building your intelligence brief' : hasCompleted ? 'No articles in this collection' : 'Your next brief starts here'}</h3>
                     <p>{data.length > 0 ? 'Try another search or remove the UK finance filter.' : isRunning ? 'Results will appear here as articles are analysed.' : hasCompleted ? 'Try a wider date range or different sources. Check the activity log for details.' : 'Choose a date range and sources above, then run analysis to review the reporting.'}</p>
-                    {data.length > 0 && <button className={styles.filterButton} onClick={() => { setQuery(''); setFinanceOnly(false); }}>Clear filters</button>}
+                    {data.length > 0 && <button className={styles.filterButton} onClick={() => { setQuery(''); setFinanceOnly(false); setWorthyOnly(false); }}>Clear filters</button>}
                 </div>
             )}
         </div>

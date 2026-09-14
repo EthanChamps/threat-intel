@@ -1,10 +1,13 @@
 import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';
-import { fetchByDateRange } from './fetcher';
+import { fetchByDateRange, type FeedItem } from './fetcher';
 import { scrapeArticles } from './scraper';
 import {
     ThreatAnalysisArraySchema,
+    TriageDecisionArraySchema,
     EXTRACTION_SYSTEM_PROMPT,
+    TRIAGE_SYSTEM_PROMPT,
+    preFilterArticle,
     type ThreatAnalysisWithDuplicates,
     type DuplicateInfo,
 } from './extractor';
@@ -67,6 +70,46 @@ function articleToScraped(article: StoredArticle) {
     return { url: article.url, title: article.title, content: article.content, pubDate: article.pubDate };
 }
 
+function isReportWorthy(analysis: ThreatAnalysisWithDuplicates): boolean {
+    // Backward compatible with v1-cached rows that lack the new field:
+    // fall back to the old broad relevance flag so old scans still render.
+    if (typeof analysis.reportWorthy === 'boolean') return analysis.reportWorthy;
+    return analysis.ukFinanceRelevance === true;
+}
+
+// Cheap headline gate before any browser scraping. Fail-open: any triage
+// error keeps every article so a model outage can never silently drop coverage.
+async function triageFeedItems(
+    items: FeedItem[],
+    emit: (event: CorpusProgress['event'], data: Record<string, unknown>) => void,
+): Promise<{ passed: FeedItem[]; skipped: number }> {
+    if (items.length === 0) return { passed: [], skipped: 0 };
+    const decisions = new Map<string, boolean>();
+    const batchSize = 20;
+    const totalBatches = Math.ceil(items.length / batchSize);
+    for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        const batchNum = Math.floor(i / batchSize) + 1;
+        emit('status', { message: `Triaging batch ${batchNum}/${totalBatches} (${batch.length} headlines)...`, phase: 'triage', batch: batchNum, totalBatches });
+        const context = batch.map((item, index) => `\n--- ITEM ${index + 1} ---\nURL: ${item.link}\nSOURCE: ${item.sourceName}\nTITLE: ${item.title}\nSNIPPET: ${(item.contentSnippet || '').slice(0, 500)}\n--- END ITEM ${index + 1} ---`).join('\n');
+        try {
+            const { object } = await generateObject({
+                model: google('gemini-2.0-flash'),
+                schema: TriageDecisionArraySchema,
+                system: TRIAGE_SYSTEM_PROMPT,
+                prompt: `Triage the following ${batch.length} cybersecurity headlines. Return one decision per item:\n\n${context}`,
+            });
+            for (const decision of object) {
+                decisions.set(decision.url, decision.reportWorthy);
+            }
+        } catch (error) {
+            emit('error', { message: `Triage batch ${batchNum} failed, keeping all ${batch.length} articles: ${error instanceof Error ? error.message : 'Unknown error'}`, phase: 'triage', batch: batchNum });
+        }
+    }
+    const passed = items.filter(item => decisions.get(item.link) !== false);
+    return { passed, skipped: items.length - passed.length };
+}
+
 export async function runCorpusAnalysis(
     options: { sources?: ThreatSource[]; startDate?: string; endDate?: string },
     onProgress?: (progress: CorpusProgress) => void,
@@ -79,15 +122,36 @@ export async function runCorpusAnalysis(
     const stats: CollectionRunStats = {
         discovered: 0, stored: 0, scraped: 0, scrapeFailed: 0, eligible: 0,
         unique: 0, duplicatesRemoved: 0, analyzed: 0, reused: 0, analysisFailed: 0,
+        preFiltered: 0, triageSkipped: 0, belowBar: 0,
     };
 
     try {
         emit('status', { message: 'Fetching all source listings...', phase: 'fetch' });
         const feedItems = await fetchByDateRange(range.start, range.end, options.sources);
         stats.discovered = feedItems.length;
-        stats.stored = upsertFeedItems(feedItems, discoveredAt);
+
+        const preFilteredOut = feedItems.filter(item => !preFilterArticle(item.title, item.sourceName, item.contentSnippet).keep);
+        stats.preFiltered = preFilteredOut.length;
+        const afterPreFilter = feedItems.filter(item => preFilterArticle(item.title, item.sourceName, item.contentSnippet).keep);
+        if (stats.preFiltered > 0) {
+            emit('status', {
+                message: `Pre-filter removed ${stats.preFiltered} low-value listings (MSRC CVE noise, legal/marketing items)`,
+                phase: 'prefilter', preFiltered: stats.preFiltered,
+            });
+        }
+
+        const { passed: triagedItems, skipped } = await triageFeedItems(afterPreFilter, emit);
+        stats.triageSkipped = skipped;
+        if (stats.triageSkipped > 0) {
+            emit('status', {
+                message: `Triage skipped ${stats.triageSkipped} headlines not worth a full read; ${triagedItems.length} proceed to scraping`,
+                phase: 'triage', triageSkipped: stats.triageSkipped,
+            });
+        }
+
+        stats.stored = upsertFeedItems(triagedItems, discoveredAt);
         emit('status', {
-            message: `Discovered ${stats.discovered} articles and stored ${stats.stored} listings`,
+            message: `Discovered ${stats.discovered} articles, kept ${triagedItems.length} after filtering, stored ${stats.stored} listings`,
             phase: 'fetch', articlesFound: stats.discovered,
         });
 
@@ -128,7 +192,12 @@ export async function runCorpusAnalysis(
         for (const group of groups) {
             const stored = getStoredAnalysis(group.primary.url);
             if (stored) {
-                analyses.push(addDuplicates(stored, duplicateMap));
+                const withDuplicates = addDuplicates(stored, duplicateMap);
+                if (isReportWorthy(withDuplicates)) {
+                    analyses.push(withDuplicates);
+                } else {
+                    stats.belowBar++;
+                }
                 stats.reused++;
             } else {
                 pending.push(group.primary);
@@ -152,20 +221,31 @@ export async function runCorpusAnalysis(
                 for (const analysis of object) {
                     const withDuplicates = addDuplicates(analysis, duplicateMap);
                     saveAnalysis(analysis.url, analysis);
-                    analyses.push(withDuplicates);
+                    if (isReportWorthy(withDuplicates)) {
+                        analyses.push(withDuplicates);
+                    } else {
+                        stats.belowBar++;
+                    }
                 }
                 stats.analyzed += object.length;
-                emit('progress', { message: `Batch ${batchNum}/${totalBatches} complete`, phase: 'analyze', results: object.map(item => addDuplicates(item, duplicateMap)), analyzedSoFar: stats.analyzed + stats.reused });
+                const worthyInBatch = object.map(item => addDuplicates(item, duplicateMap)).filter(isReportWorthy);
+                emit('progress', { message: `Batch ${batchNum}/${totalBatches} complete (${worthyInBatch.length}/${object.length} client-worthy)`, phase: 'analyze', results: worthyInBatch, analyzedSoFar: stats.analyzed + stats.reused });
             } catch (error) {
                 stats.analysisFailed += batch.length;
                 emit('error', { message: `Batch ${batchNum} failed: ${error instanceof Error ? error.message : 'Unknown error'}`, phase: 'analyze', batch: batchNum });
             }
         }
         finishCollectionRun(runId, 'complete', stats);
-        const sourceStats = currentArticles.reduce<Record<string, number>>((acc, article) => {
-            acc[article.sourceName] = (acc[article.sourceName] || 0) + 1;
+        const sourceByUrl = new Map(currentArticles.map(article => [article.url, article.sourceName]));
+        const sourceStats = analyses.reduce<Record<string, number>>((acc, analysis) => {
+            const source = sourceByUrl.get(analysis.url) || sourceFromUrl(analysis.url);
+            acc[source] = (acc[source] || 0) + 1;
             return acc;
         }, {});
+        emit('status', {
+            message: `Brief ready: ${analyses.length} client-worthy articles (${stats.preFiltered} pre-filtered, ${stats.triageSkipped} triage-skipped, ${stats.belowBar} below the reporting bar)`,
+            phase: 'done', reportWorthy: analyses.length, belowBar: stats.belowBar,
+        });
         return { data: analyses, stats, sourceStats };
     } catch (error) {
         finishCollectionRun(runId, 'failed', stats, error instanceof Error ? error.message : 'Unknown error');

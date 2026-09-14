@@ -24,6 +24,8 @@ export async function POST(request: Request) {
                     analyzedArticles: result.stats.analyzed + result.stats.reused,
                     newArticles: result.stats.scraped, reusedArticles: result.stats.reused,
                     scrapeFailed: result.stats.scrapeFailed, analysisFailed: result.stats.analysisFailed,
+                    preFiltered: result.stats.preFiltered, triageSkipped: result.stats.triageSkipped,
+                    belowBar: result.stats.belowBar,
                     sourceStats: result.sourceStats,
                 })));
             } catch (error) {
