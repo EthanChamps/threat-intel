@@ -30,11 +30,14 @@ export interface CollectionRunStats {
     analyzed: number;
     reused: number;
     analysisFailed: number;
+    preFiltered: number;
+    triageSkipped: number;
+    belowBar: number;
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DATA_DIR, 'threat-intel.sqlite');
-const PROMPT_VERSION = 'extraction-v1';
+const PROMPT_VERSION = 'extraction-v2';
 
 let database: Database.Database | undefined;
 

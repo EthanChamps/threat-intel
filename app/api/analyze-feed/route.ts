@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
             startDate: body.startDate as string | undefined,
             endDate: body.endDate as string | undefined,
         });
-        return NextResponse.json({ success: true, data: result.data, totalArticles: result.stats.eligible, scrapedArticles: result.stats.scraped, uniqueArticles: result.stats.unique, duplicatesRemoved: result.stats.duplicatesRemoved, analyzedArticles: result.stats.analyzed + result.stats.reused, newArticles: result.stats.scraped, reusedArticles: result.stats.reused, scrapeFailed: result.stats.scrapeFailed, analysisFailed: result.stats.analysisFailed, sourceStats: result.sourceStats });
+        return NextResponse.json({ success: true, data: result.data, totalArticles: result.stats.eligible, scrapedArticles: result.stats.scraped, uniqueArticles: result.stats.unique, duplicatesRemoved: result.stats.duplicatesRemoved, analyzedArticles: result.stats.analyzed + result.stats.reused, newArticles: result.stats.scraped, reusedArticles: result.stats.reused, scrapeFailed: result.stats.scrapeFailed, analysisFailed: result.stats.analysisFailed, preFiltered: result.stats.preFiltered, triageSkipped: result.stats.triageSkipped, belowBar: result.stats.belowBar, sourceStats: result.sourceStats });
     } catch (error) {
         return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 500 });
     }
